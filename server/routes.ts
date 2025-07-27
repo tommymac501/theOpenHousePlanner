@@ -260,6 +260,7 @@ function parseListingText(text: string) {
     address: string;
     price: string;
     zestimate: string;
+    monthlyPayment: string;
     date: string;
     time: string;
     notes: string;

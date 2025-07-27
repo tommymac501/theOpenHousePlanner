@@ -179,8 +179,19 @@ export function AddOpenHouse({ onNavigate, editingOpenHouse }: AddOpenHouseProps
     },
   });
 
-
-
+  // Function to process image files (for paste functionality)
+  const processImageFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = e.target?.result as string;
+      if (base64) {
+        const base64Data = base64.split(',')[1]; // Remove data:image/... prefix
+        setOcrImageData(base64Data);
+        form.setValue("imageData", base64Data);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
 
   const onSubmit = (data: z.infer<typeof insertOpenHouseSchema>) => {
