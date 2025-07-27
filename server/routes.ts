@@ -10,13 +10,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all open houses
   app.get("/api/open-houses", async (req, res) => {
     try {
+      console.log("API: Fetching all open houses...");
       const openHouses = await storage.getAllOpenHouses();
+      console.log("API: Successfully fetched", openHouses.length, "open houses");
       res.json(openHouses);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch open houses" });
+      console.error("API: Error fetching open houses:", error);
+      res.status(500).json({ message: "Failed to fetch open houses", error: error.message });
     }
   });
-
+  
   // Get single open house
   app.get("/api/open-houses/:id", async (req, res) => {
     try {
@@ -96,13 +99,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get stats
   app.get("/api/stats", async (req, res) => {
     try {
+      console.log("API: Fetching stats...");
       const stats = await storage.getStats();
+      console.log("API: Successfully fetched stats:", stats);
       res.json(stats);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch stats" });
+      console.error("API: Error fetching stats:", error);
+      res.status(500).json({ message: "Failed to fetch stats", error: error.message });
     }
   });
-
+  
   // Parse listing data
   app.post("/api/parse-listing", async (req, res) => {
     try {
