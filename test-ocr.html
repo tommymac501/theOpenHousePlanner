@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OCR Test</title>
+</head>
+<body>
+    <h1>OCR Test</h1>
+    <input type="file" id="imageInput" accept="image/*">
+    <div id="result"></div>
+
+    <script type="module">
+        import Tesseract from 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.esm.min.js';
+
+        document.getElementById('imageInput').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                const imageData = event.target.result;
+                
+                console.log('Starting OCR...');
+                try {
+                    const { data: { text } } = await Tesseract.recognize(imageData, 'eng', {
+                        logger: m => console.log(m)
+                    });
+                    
+                    console.log('OCR extracted text:', text);
+                    document.getElementById('result').innerHTML = `<pre>${text}</pre>`;
+                    
+                    // Test parsing
+                    const response = await fetch('/api/parse-clipboard', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text })
+                    });
+                    
+                    const parsed = await response.json();
+                    console.log('Parsed result:', parsed);
+                    
+                } catch (error) {
+                    console.error('OCR failed:', error);
+                    document.getElementById('result').innerHTML = `Error: ${error.message}`;
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+    </script>
+</body>
+</html>
