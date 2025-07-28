@@ -79,17 +79,17 @@ export function StatsDashboard({ onFilterChange, activeFilter }: StatsDashboardP
         {filterCards.map((card) => (
           <div
             key={card.key || 'all'}
-            className={`floating-card p-3 text-center cursor-pointer transition-all duration-200 ${
+            className={`floating-card p-2 text-center cursor-pointer transition-all duration-200 ${
               activeFilter === card.key 
                 ? 'ring-2 ring-blue-500 shadow-lg scale-105 bg-blue-50' 
                 : 'hover:neon-glow hover:scale-102'
             }`}
             onClick={() => onFilterChange(card.key)}
           >
-            <div className={`w-8 h-8 mx-auto mb-2 rounded-full bg-gradient-to-r ${card.gradient} flex items-center justify-center`}>
-              <div className="text-white font-bold text-sm">{card.value}</div>
+            <div className={`w-6 h-6 mx-auto mb-1 rounded-full bg-gradient-to-r ${card.gradient} flex items-center justify-center`}>
+              <div className="text-white font-bold text-xs">{card.value}</div>
             </div>
-            <div className={`text-xl font-bold mb-1 font-['Outfit'] ${card.textColor}`}>
+            <div className={`text-lg font-bold mb-1 font-['Outfit'] ${card.textColor}`}>
               {card.value}
             </div>
             <div className="text-xs text-gray-600 font-medium uppercase tracking-wide">
