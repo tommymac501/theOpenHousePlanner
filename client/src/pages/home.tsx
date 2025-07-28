@@ -40,9 +40,15 @@ export function Home({ onNavigate }: HomeProps) {
       
       switch (activeFilter) {
         case "thisWeek":
-          return houseDate >= now && houseDate <= oneWeekFromNow;
+          // Include today and next 7 days
+          const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          const endOfWeek = new Date(startOfToday.getTime() + 7 * 24 * 60 * 60 * 1000);
+          return houseDate >= startOfToday && houseDate < endOfWeek;
         case "nextWeek":
-          return houseDate > oneWeekFromNow && houseDate <= twoWeeksFromNow;
+          // Week 2: days 8-14 from today
+          const startOfNextWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7);
+          const endOfNextWeek = new Date(startOfNextWeek.getTime() + 7 * 24 * 60 * 60 * 1000);
+          return houseDate >= startOfNextWeek && houseDate < endOfNextWeek;
         case "liked":
           return house.favorited;
         case "disliked":
@@ -234,19 +240,21 @@ export function Home({ onNavigate }: HomeProps) {
         ) : (
           <div className="text-center py-20 px-6">
             <div className="floating-card max-w-md mx-auto p-8">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 flex items-center justify-center">
+              <div className={`w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-r ${activeFilter ? 'from-gray-400 to-gray-500' : 'from-purple-500 to-indigo-600'} flex items-center justify-center`}>
                 <HomeIcon className="h-10 w-10 text-white" />
               </div>
               <h3 className="text-2xl font-bold text-gray-800 mb-3 font-['Outfit']">
-                {searchQuery ? "No Properties Found" : "Welcome to Open Home Visit Planner"}
+                {activeFilter ? "None found" : searchQuery ? "No Properties Found" : "Welcome to Open Home Visit Planner"}
               </h3>
               <p className="text-gray-600 mb-6 leading-relaxed">
-                {searchQuery 
-                  ? "Try adjusting your search terms to find the perfect property."
-                  : "Start tracking your dream properties and never miss an open house again."
+                {activeFilter 
+                  ? "No properties match the selected filter."
+                  : searchQuery 
+                    ? "Try adjusting your search terms to find the perfect property."
+                    : "Start tracking your dream properties and never miss an open house again."
                 }
               </p>
-              {!searchQuery && (
+              {!searchQuery && !activeFilter && (
                 <Button 
                   onClick={() => onNavigate("add")}
                   className="luxury-button px-8 py-3 text-lg"

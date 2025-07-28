@@ -59,17 +59,19 @@ export class DatabaseStorage implements IStorage {
     const disliked = houses.filter(h => h.disliked).length;
     
     const now = new Date();
-    const oneWeekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-    const twoWeeksFromNow = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfWeek = new Date(startOfToday.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const startOfNextWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7);
+    const endOfNextWeek = new Date(startOfNextWeek.getTime() + 7 * 24 * 60 * 60 * 1000);
     
     const thisWeek = houses.filter(h => {
       const houseDate = new Date(h.date);
-      return houseDate >= now && houseDate <= oneWeekFromNow;
+      return houseDate >= startOfToday && houseDate < endOfWeek;
     }).length;
     
     const nextWeek = houses.filter(h => {
       const houseDate = new Date(h.date);
-      return houseDate > oneWeekFromNow && houseDate <= twoWeeksFromNow;
+      return houseDate >= startOfNextWeek && houseDate < endOfNextWeek;
     }).length;
 
     return { total, thisWeek, nextWeek, visited, notVisited, liked, disliked };
