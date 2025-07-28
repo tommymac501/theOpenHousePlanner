@@ -14,18 +14,47 @@ interface HomeProps {
 export function Home({ onNavigate }: HomeProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("date");
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set(["Past Open Houses"]));
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
   const { data: openHouses = [], isLoading } = useQuery<OpenHouse[]>({
     queryKey: ["/api/open-houses"],
   });
 
   const filteredAndSortedHouses = openHouses
-    .filter(house => 
-      !searchQuery || 
-      house.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      house.price.includes(searchQuery)
-    )
+    .filter(house => {
+      // Apply search filter
+      const matchesSearch = !searchQuery || 
+        house.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        house.price.includes(searchQuery);
+      
+      if (!matchesSearch) return false;
+      
+      // Apply active filter
+      if (!activeFilter) return true;
+      
+      const now = new Date();
+      const oneWeekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const twoWeeksFromNow = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+      const houseDate = new Date(house.date);
+      
+      switch (activeFilter) {
+        case "thisWeek":
+          return houseDate >= now && houseDate <= oneWeekFromNow;
+        case "nextWeek":
+          return houseDate > oneWeekFromNow && houseDate <= twoWeeksFromNow;
+        case "liked":
+          return house.favorited;
+        case "disliked":
+          return house.disliked;
+        case "visited":
+          return house.visited;
+        case "notVisited":
+          return !house.visited;
+        default:
+          return true;
+      }
+    })
     .sort((a, b) => {
       switch (sortBy) {
         case "price":
@@ -144,7 +173,7 @@ export function Home({ onNavigate }: HomeProps) {
       
       <main className="pb-24">
         <div className="animate-fade-in">
-          <StatsDashboard />
+          <StatsDashboard onFilterChange={setActiveFilter} activeFilter={activeFilter} />
         </div>
 
         {Object.keys(groupedHouses).length > 0 ? (
