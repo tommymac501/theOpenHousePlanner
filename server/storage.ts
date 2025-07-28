@@ -8,7 +8,7 @@ export interface IStorage {
   createOpenHouse(openHouse: InsertOpenHouse): Promise<OpenHouse>;
   updateOpenHouse(id: number, updates: UpdateOpenHouse): Promise<OpenHouse | undefined>;
   deleteOpenHouse(id: number): Promise<boolean>;
-  getStats(): Promise<{ total: number; thisWeek: number; visited: number }>;
+  getStats(): Promise<{ total: number; thisWeek: number; nextWeek: number; visited: number; notVisited: number; liked: number; disliked: number }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -50,19 +50,29 @@ export class DatabaseStorage implements IStorage {
     return result.rowCount !== null && result.rowCount > 0;
   }
 
-  async getStats(): Promise<{ total: number; thisWeek: number; visited: number }> {
+  async getStats(): Promise<{ total: number; thisWeek: number; nextWeek: number; visited: number; notVisited: number; liked: number; disliked: number }> {
     const houses = await db.select().from(openHouses);
     const total = houses.length;
     const visited = houses.filter(h => h.visited).length;
+    const notVisited = houses.filter(h => !h.visited).length;
+    const liked = houses.filter(h => h.favorited).length;
+    const disliked = houses.filter(h => h.disliked).length;
     
     const now = new Date();
     const oneWeekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const twoWeeksFromNow = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+    
     const thisWeek = houses.filter(h => {
       const houseDate = new Date(h.date);
       return houseDate >= now && houseDate <= oneWeekFromNow;
     }).length;
+    
+    const nextWeek = houses.filter(h => {
+      const houseDate = new Date(h.date);
+      return houseDate > oneWeekFromNow && houseDate <= twoWeeksFromNow;
+    }).length;
 
-    return { total, thisWeek, visited };
+    return { total, thisWeek, nextWeek, visited, notVisited, liked, disliked };
   }
 }
 

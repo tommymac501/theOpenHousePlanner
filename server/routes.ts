@@ -16,7 +16,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(openHouses);
     } catch (error) {
       console.error("API: Error fetching open houses:", error);
-      res.status(500).json({ message: "Failed to fetch open houses", error: error.message });
+      res.status(500).json({ message: "Failed to fetch open houses", error: error instanceof Error ? error.message : String(error) });
     }
   });
   
@@ -105,7 +105,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(stats);
     } catch (error) {
       console.error("API: Error fetching stats:", error);
-      res.status(500).json({ message: "Failed to fetch stats", error: error.message });
+      res.status(500).json({ message: "Failed to fetch stats", error: error instanceof Error ? error.message : String(error) });
     }
   });
   
