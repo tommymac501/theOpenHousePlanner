@@ -1,9 +1,33 @@
-import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, varchar, jsonb, index } from "drizzle-orm/pg-core";
+import { sql } from 'drizzle-orm';
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Session storage table for Replit Auth
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
+// User storage table for Replit Auth
+export const users = pgTable("users", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: varchar("email").unique(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const openHouses = pgTable("open_houses", {
   id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
   address: text("address").notNull(),
   price: text("price").notNull(),
   zestimate: text("zestimate"),
@@ -40,3 +64,7 @@ export const updateOpenHouseSchema = createInsertSchema(openHouses).omit({
 export type InsertOpenHouse = z.infer<typeof insertOpenHouseSchema>;
 export type UpdateOpenHouse = z.infer<typeof updateOpenHouseSchema>;
 export type OpenHouse = typeof openHouses.$inferSelect;
+
+// User types for Replit Auth
+export type UpsertUser = typeof users.$inferInsert;
+export type User = typeof users.$inferSelect;
