@@ -8,6 +8,7 @@ import { Home } from "@/pages/home";
 import { AddOpenHouse } from "@/pages/add-open-house";
 import { OpenHouseDetail } from "@/pages/open-house-detail";
 import { Analytics } from "@/pages/analytics";
+import { Settings } from "@/pages/settings";
 import Landing from "@/pages/landing";
 import { useAuth } from "@/hooks/useAuth";
 import type { OpenHouse } from "@shared/schema";
@@ -37,6 +38,8 @@ function Router() {
       setActiveTab("add");
     } else if (path === "analytics") {
       setActiveTab("analytics");
+    } else if (path === "settings") {
+      setActiveTab("settings");
     } else {
       // For detail view, keep the current tab active
     }
@@ -51,8 +54,7 @@ function Router() {
     } else if (tab === "analytics") {
       navigate("analytics");
     } else if (tab === "settings") {
-      // Settings page can be implemented later
-      navigate("home");
+      navigate("settings");
     }
   };
 
@@ -83,6 +85,9 @@ function Router() {
       case "analytics":
         return <Analytics onNavigate={navigate} />;
       
+      case "settings":
+        return <Settings onNavigate={navigate} />;
+      
       default:
         return <Home onNavigate={navigate} />;
     }
@@ -93,7 +98,7 @@ function Router() {
       {renderCurrentView()}
       
       {/* Only show bottom navigation on main views */}
-      {(currentRoute.path === "home" || currentRoute.path === "add" || currentRoute.path === "analytics") && (
+      {(currentRoute.path === "home" || currentRoute.path === "add" || currentRoute.path === "analytics" || currentRoute.path === "settings") && (
         <BottomNavigation 
           activeTab={activeTab} 
           onTabChange={handleTabChange} 
