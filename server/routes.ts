@@ -31,6 +31,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware (will skip setup if no REPL_ID)
   await setupAuth(app);
 
+  // Demo user route for production
+  app.get('/api/auth/demo-user', async (req, res) => {
+    // Create a demo user
+    const demoUser = {
+      id: "demo-user-" + Date.now(),
+      email: "demo@openhouseplanner.com",
+      firstName: "Demo",
+      lastName: "User",
+      profileImageUrl: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    
+    try {
+      await storage.upsertUser(demoUser);
+      
+      // Set up a mock session for demo
+      (req as any).user = {
+        claims: {
+          sub: demoUser.id,
+          email: demoUser.email,
+          first_name: demoUser.firstName,
+          last_name: demoUser.lastName,
+        }
+      };
+      
+      res.json({ message: "Demo login successful", user: demoUser });
+    } catch (error) {
+      console.error("Error creating demo user:", error);
+      res.status(500).json({ message: "Failed to create demo user" });
+    }
+  });
+
   // Development admin bypass route
   app.get('/api/auth/admin-login', async (req, res) => {
     if (process.env.NODE_ENV !== 'development') {
@@ -101,27 +134,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Demo/default user route for when auth isn't working
-  app.get('/api/auth/demo-user', async (req, res) => {
-    // Create a demo user for testing purposes
-    const demoUser = {
-      id: "demo-user",
-      email: "demo@openhouseplanner.com",
-      firstName: "Demo",
-      lastName: "User",
-      profileImageUrl: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    
-    try {
-      await storage.upsertUser(demoUser);
-      res.json(demoUser);
-    } catch (error) {
-      console.error("Error creating demo user:", error);
-      res.status(500).json({ message: "Failed to create demo user" });
-    }
-  });
+
   // Get all open houses
   app.get("/api/open-houses", async (req, res) => {
     try {
