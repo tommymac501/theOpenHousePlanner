@@ -8,6 +8,11 @@ import { extractTextFromImage } from "./ocr";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check for production deployment
+  app.get('/api/health', (req, res) => {
+    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+
   // Check if we're in demo mode (no REPL_ID) and set up simple routes first
   if (!process.env.REPL_ID) {
     console.log("Setting up demo mode routes");
