@@ -7,6 +7,8 @@ import { BottomNavigation } from "@/components/bottom-navigation";
 import { Home } from "@/pages/home";
 import { AddOpenHouse } from "@/pages/add-open-house";
 import { OpenHouseDetail } from "@/pages/open-house-detail";
+import Landing from "@/pages/landing";
+import { useAuth } from "@/hooks/useAuth";
 import type { OpenHouse } from "@shared/schema";
 
 type Route = {
@@ -14,9 +16,15 @@ type Route = {
   params?: any;
 };
 
-function App() {
+function Router() {
+  const { isAuthenticated, isLoading } = useAuth();
   const [currentRoute, setCurrentRoute] = useState<Route>({ path: "home" });
   const [activeTab, setActiveTab] = useState("home");
+
+  // Show landing page for unauthenticated users
+  if (isLoading || !isAuthenticated) {
+    return <Landing />;
+  }
 
   const navigate = (path: string, params?: any) => {
     setCurrentRoute({ path, params });
@@ -73,20 +81,25 @@ function App() {
   };
 
   return (
+    <div className="min-h-screen bg-gray-50">
+      {renderCurrentView()}
+      
+      {/* Only show bottom navigation on main views */}
+      {(currentRoute.path === "home" || currentRoute.path === "add") && (
+        <BottomNavigation 
+          activeTab={activeTab} 
+          onTabChange={handleTabChange} 
+        />
+      )}
+    </div>
+  );
+}
+
+function App() {
+  return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <div className="min-h-screen bg-gray-50">
-          {renderCurrentView()}
-          
-          {/* Only show bottom navigation on main views */}
-          {(currentRoute.path === "home" || currentRoute.path === "add") && (
-            <BottomNavigation 
-              activeTab={activeTab} 
-              onTabChange={handleTabChange} 
-            />
-          )}
-        </div>
-        
+        <Router />
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>
