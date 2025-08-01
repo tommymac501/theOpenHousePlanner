@@ -7,20 +7,27 @@ export default function Landing() {
   const [activeFeature, setActiveFeature] = useState<string | null>(null);
   
   const handleLogin = async () => {
-    // Try demo login for both dev and prod
+    // Try demo login first
     try {
       const response = await fetch("/api/auth/demo-user");
       if (response.ok) {
-        // Force a full page reload to trigger auth state change
-        window.location.href = "/";
+        // Demo user created successfully, reload page to trigger auth state
+        console.log("Demo login successful, reloading page");
+        window.location.reload();
         return;
       }
     } catch (error) {
       console.error("Demo login failed:", error);
     }
     
-    // If demo fails, try regular login
-    window.location.href = "/api/login";
+    // If demo fails, try regular login only if we have proper auth setup
+    if (import.meta.env.PROD && window.location.hostname !== 'localhost') {
+      window.location.href = "/api/login";
+    } else {
+      // In development, just reload the page - the demo user should be sufficient
+      console.log("Development mode - reloading after demo setup");
+      window.location.reload();
+    }
   };
 
   const handleDevLogin = async () => {

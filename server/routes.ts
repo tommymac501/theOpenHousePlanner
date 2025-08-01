@@ -8,7 +8,22 @@ import { extractTextFromImage } from "./ocr";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware
+  // Check if we're in demo mode (no REPL_ID) and set up simple routes first
+  if (!process.env.REPL_ID) {
+    console.log("Setting up demo mode routes");
+    
+    // Simple demo login route that bypasses all auth
+    app.get("/api/login", (req, res) => {
+      console.log("Demo login - redirecting to home");
+      res.redirect('/');
+    });
+    
+    app.get("/api/logout", (req, res) => {
+      res.redirect('/');
+    });
+  }
+
+  // Auth middleware (will skip setup if no REPL_ID)
   await setupAuth(app);
 
   // Development admin bypass route
