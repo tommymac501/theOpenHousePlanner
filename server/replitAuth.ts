@@ -26,6 +26,11 @@ const getOidcConfig = memoize(
 );
 
 export function getSession() {
+  // Skip session setup if not in Replit environment
+  if (!isReplitEnvironment) {
+    return (req: any, res: any, next: any) => next();
+  }
+
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
   const pgStore = connectPg(session);
   const sessionStore = new pgStore({

@@ -8,8 +8,23 @@ import { extractTextFromImage } from "./ocr";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check endpoint for production deployments
+  app.get("/api/health", (req, res) => {
+    res.json({ 
+      status: "ok", 
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || "development",
+      hasReplit: !!process.env.REPLIT_DOMAINS
+    });
+  });
+
   // Auth middleware (only in Replit environment)
-  await setupAuth(app);
+  try {
+    await setupAuth(app);
+  } catch (error) {
+    console.error("Auth setup failed:", error);
+    // Continue without auth in production
+  }
   
   // For production deployment, add logout route
   if (!process.env.REPLIT_DOMAINS) {

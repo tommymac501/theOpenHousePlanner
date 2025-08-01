@@ -3,7 +3,8 @@ services:
     name: open-house-planner
     env: node
     buildCommand: ./build.sh
-    startCommand: npm start
+    startCommand: node start-production.js
+    healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production
