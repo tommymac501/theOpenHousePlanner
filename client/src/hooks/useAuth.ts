@@ -16,15 +16,15 @@ export function useAuth() {
     enabled: !isDev || !devUser,
   });
 
-  // For production deployment without auth, create a default user
-  const { data: defaultUser, isLoading: defaultLoading } = useQuery({
-    queryKey: ["/api/auth/default-user"],
+  // For demo mode when auth fails
+  const { data: demoUser, isLoading: demoLoading } = useQuery({
+    queryKey: ["/api/auth/demo-user"],
     retry: false,
-    enabled: !isDev && !user,
+    enabled: !isDev && !user && !userLoading,
   });
 
-  const finalUser = isDev && devUser ? devUser : user || defaultUser;
-  const finalLoading = isDev ? devLoading : (userLoading || defaultLoading);
+  const finalUser = isDev && devUser ? devUser : user || demoUser;
+  const finalLoading = isDev ? devLoading : (userLoading || demoLoading);
 
   return {
     user: finalUser,

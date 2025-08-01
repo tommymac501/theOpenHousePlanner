@@ -77,7 +77,7 @@ export default function Landing() {
               onClick={handleLogin}
               className="luxury-button px-6 py-2"
             >
-              Sign In
+              {import.meta.env.PROD ? "Try Demo" : "Sign In"}
             </Button>
           </div>
         </div>
@@ -99,7 +99,7 @@ export default function Landing() {
               onClick={handleLogin}
               className="luxury-button px-8 py-4 text-lg"
             >
-              Get Started Free
+              {import.meta.env.PROD ? "Try Demo Now" : "Get Started Free"}
             </Button>
             {import.meta.env.DEV && (
               <Button 
@@ -280,7 +280,7 @@ export default function Landing() {
                 onClick={handleLogin}
                 className="luxury-button px-8 py-3 text-lg w-full"
               >
-                Start Planning Today
+                {import.meta.env.PROD ? "Try Demo" : "Start Planning Today"}
               </Button>
               {import.meta.env.DEV && (
                 <Button 

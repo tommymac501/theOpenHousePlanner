@@ -81,16 +81,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Default user for production when auth is not configured
-  app.get('/api/auth/default-user', async (req, res) => {
-    // Only provide default user if REPL_ID is not configured (no auth setup)
-    if (process.env.REPL_ID) {
-      return res.status(404).json({ message: "Not found" });
-    }
-    
-    // Create a default user for demo purposes
-    const defaultUser = {
-      id: "default-user",
+  // Demo/default user route for when auth isn't working
+  app.get('/api/auth/demo-user', async (req, res) => {
+    // Create a demo user for testing purposes
+    const demoUser = {
+      id: "demo-user",
       email: "demo@openhouseplanner.com",
       firstName: "Demo",
       lastName: "User",
@@ -100,11 +95,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     };
     
     try {
-      await storage.upsertUser(defaultUser);
-      res.json(defaultUser);
+      await storage.upsertUser(demoUser);
+      res.json(demoUser);
     } catch (error) {
-      console.error("Error creating default user:", error);
-      res.status(500).json({ message: "Failed to create default user" });
+      console.error("Error creating demo user:", error);
+      res.status(500).json({ message: "Failed to create demo user" });
     }
   });
   // Get all open houses
