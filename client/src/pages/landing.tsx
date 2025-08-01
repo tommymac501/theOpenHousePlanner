@@ -6,48 +6,8 @@ import { Home, MapPin, Calendar, Heart, TrendingUp, Shield, Upload, Camera, BarC
 export default function Landing() {
   const [activeFeature, setActiveFeature] = useState<string | null>(null);
   
-  const handleLogin = async () => {
-    // Always use demo login - simpler and more reliable
-    try {
-      console.log("Attempting demo login...");
-      const response = await fetch("/api/auth/demo-user", {
-        method: 'GET',
-        credentials: 'include',
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Demo login response:", data);
-        
-        // Small delay to ensure session is saved
-        setTimeout(() => {
-          console.log("Redirecting to home page...");
-          window.location.href = "/";
-        }, 500);
-        return;
-      } else {
-        console.error("Demo login failed with status:", response.status);
-      }
-    } catch (error) {
-      console.error("Demo login error:", error);
-    }
-    
-    // Last resort - reload the page
-    console.log("Falling back to page reload");
-    window.location.reload();
-  };
-
-  const handleDevLogin = async () => {
-    if (import.meta.env.DEV) {
-      try {
-        const response = await fetch("/api/auth/admin-login");
-        if (response.ok) {
-          window.location.reload();
-        }
-      } catch (error) {
-        console.error("Dev login failed:", error);
-      }
-    }
+  const handleLogin = () => {
+    window.location.href = "/api/login";
   };
 
   const featurePreviews = {
@@ -90,23 +50,12 @@ export default function Landing() {
               Open House Planner
             </h1>
           </div>
-          <div className="flex items-center space-x-3">
-            {import.meta.env.DEV && (
-              <Button 
-                onClick={handleDevLogin}
-                variant="outline"
-                className="px-4 py-2"
-              >
-                Dev Login
-              </Button>
-            )}
-            <Button 
-              onClick={handleLogin}
-              className="luxury-button px-6 py-2"
-            >
-              {import.meta.env.PROD ? "Try Demo" : "Sign In"}
-            </Button>
-          </div>
+          <Button 
+            onClick={handleLogin}
+            className="luxury-button px-6 py-2"
+          >
+            Sign In
+          </Button>
         </div>
       </header>
 
@@ -121,23 +70,12 @@ export default function Landing() {
             Track, organize, and plan your open house visits with smart scheduling, 
             property insights, and seamless navigation integration.
           </p>
-          <div className="flex flex-col items-center space-y-3">
-            <Button 
-              onClick={handleLogin}
-              className="luxury-button px-8 py-4 text-lg"
-            >
-              {import.meta.env.PROD ? "Try Demo Now" : "Get Started Free"}
-            </Button>
-            {import.meta.env.DEV && (
-              <Button 
-                onClick={handleDevLogin}
-                variant="outline"
-                className="px-6 py-2 text-sm"
-              >
-                Development Login
-              </Button>
-            )}
-          </div>
+          <Button 
+            onClick={handleLogin}
+            className="luxury-button px-8 py-4 text-lg"
+          >
+            Get Started Free
+          </Button>
         </div>
 
         {/* Features Grid */}
@@ -302,23 +240,12 @@ export default function Landing() {
             <p className="text-gray-600 mb-6 leading-relaxed">
               Join thousands of home buyers who've streamlined their house hunting with our platform.
             </p>
-            <div className="space-y-3 w-full">
-              <Button 
-                onClick={handleLogin}
-                className="luxury-button px-8 py-3 text-lg w-full"
-              >
-                {import.meta.env.PROD ? "Try Demo" : "Start Planning Today"}
-              </Button>
-              {import.meta.env.DEV && (
-                <Button 
-                  onClick={handleDevLogin}
-                  variant="outline"
-                  className="px-6 py-2 text-sm w-full"
-                >
-                  Quick Dev Access
-                </Button>
-              )}
-            </div>
+            <Button 
+              onClick={handleLogin}
+              className="luxury-button px-8 py-3 text-lg w-full"
+            >
+              Start Planning Today
+            </Button>
           </div>
         </div>
       </main>

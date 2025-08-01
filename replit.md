@@ -34,8 +34,6 @@ Preferred communication style: Simple, everyday language.
 
 ### Database Schema
 - **open_houses table**: Stores property information including address, price, date/time, images, and user preferences
-- **users table**: Stores user authentication data for Replit auth integration
-- **sessions table**: Stores user session data for authentication persistence
 - **Fields**: id, address, price, zestimate, monthlyPayment, date, time, imageUrl, imageData, listingUrl, notes, visited, favorited, disliked, createdAt
 
 ### API Endpoints
@@ -47,14 +45,11 @@ Preferred communication style: Simple, everyday language.
 - `GET /api/stats` - Get dashboard statistics
 
 ### Frontend Pages
-- **Landing Page**: Authentication entry point with feature previews and login options
 - **Home**: Main dashboard with stats and open house listings
 - **Add Open House**: Form for adding new properties with image upload and clipboard parsing
 - **Open House Detail**: Detailed view with edit capabilities and map integration
-- **Analytics**: Comprehensive analytics dashboard with insights, trends, and statistics
 
 ### Core Features
-- **User Authentication**: Replit auth integration with session management, demo mode authentication, and development login bypass
 - **Property Management**: Add, edit, delete, and view open house details
 - **Image Handling**: Upload images via file input or paste from clipboard
 - **Data Parsing**: Extract property details from clipboard text or images using xAI/Grok vision
@@ -62,9 +57,8 @@ Preferred communication style: Simple, everyday language.
 - **Visit Tracking**: Mark properties as visited, favorited, or disliked
 - **Auto-Visit Logic**: Favoriting or disliking a property automatically marks it as visited
 - **Waze Integration**: Direct navigation to properties via Waze app/website from Property Details page
-- **Analytics Dashboard**: Comprehensive insights including price analysis, visit preferences, recent activity, and personalized recommendations
-- **Interactive Landing Features**: Clickable feature previews with detailed explanations and smooth animations
-- **Mobile Navigation**: Bottom tab navigation for mobile users with analytics tab
+- **Statistics Dashboard**: Show total properties, weekly count, and visit stats
+- **Mobile Navigation**: Bottom tab navigation for mobile users
 
 ## Data Flow
 
@@ -115,17 +109,6 @@ Preferred communication style: Simple, everyday language.
 - **Migrations**: Drizzle Kit handles schema migrations
 - **Schema**: Centralized in `shared/schema.ts` for type safety
 - **Connection**: Neon serverless with WebSocket support for development
-
-## Recent Changes
-
-**August 1, 2025**: Fixed critical demo authentication system
-- Resolved session middleware initialization in demo mode by moving session setup above REPL_ID check
-- Fixed ES module import compatibility for production builds
-- Enhanced build script to ensure database migrations succeed before deployment
-- Added automatic demo user creation at server startup to prevent missing user errors
-- Simplified frontend authentication logic to always use demo mode for reliability
-- Demo authentication now works with persistent PostgreSQL sessions
-- "Try Demo" button provides full feature access with proper user sessions
 
 ### Key Architectural Decisions
 

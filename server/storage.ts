@@ -25,8 +25,6 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  // Expose db instance for direct queries when needed
-  public db = db;
   // User operations (required for Replit Auth)
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
@@ -34,29 +32,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
-    try {
-      const [user] = await db
-        .insert(users)
-        .values(userData)
-        .onConflictDoUpdate({
-          target: users.id,
-          set: {
-            ...userData,
-            updatedAt: new Date(),
-          },
-        })
-        .returning();
-      return user;
-    } catch (error: any) {
-      // If there's a unique constraint error on email, try to get the existing user
-      if (error.code === '23505' && error.constraint === 'users_email_unique') {
-        const existingUser = await db.select().from(users).where(eq(users.email, userData.email!)).limit(1);
-        if (existingUser.length > 0) {
-          return existingUser[0];
-        }
-      }
-      throw error;
-    }
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return user;
   }
   async getOpenHouse(id: number): Promise<OpenHouse | undefined> {
     const [openHouse] = await db.select().from(openHouses).where(eq(openHouses.id, id));

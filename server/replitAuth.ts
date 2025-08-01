@@ -9,17 +9,14 @@ import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 
 if (!process.env.REPLIT_DOMAINS) {
-  console.warn("Environment variable REPLIT_DOMAINS not provided, using localhost for development");
+  throw new Error("Environment variable REPLIT_DOMAINS not provided");
 }
 
 const getOidcConfig = memoize(
   async () => {
-    if (!process.env.REPL_ID) {
-      throw new Error("REPL_ID environment variable is required for authentication");
-    }
     return await client.discovery(
       new URL(process.env.ISSUER_URL ?? "https://replit.com/oidc"),
-      process.env.REPL_ID
+      process.env.REPL_ID!
     );
   },
   { maxAge: 3600 * 1000 }
@@ -27,14 +24,6 @@ const getOidcConfig = memoize(
 
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
-  
-  // Generate a fallback secret if SESSION_SECRET is not provided
-  const sessionSecret = process.env.SESSION_SECRET || 'fallback-secret-for-development-' + Math.random().toString(36);
-  
-  if (!process.env.SESSION_SECRET) {
-    console.warn("SESSION_SECRET not provided, using generated secret (not suitable for production)");
-  }
-  
   const pgStore = connectPg(session);
   const sessionStore = new pgStore({
     conString: process.env.DATABASE_URL,
@@ -42,19 +31,15 @@ export function getSession() {
     ttl: sessionTtl,
     tableName: "sessions",
   });
-  
-  const isProduction = process.env.NODE_ENV === 'production';
-  
   return session({
-    secret: sessionSecret,
+    secret: process.env.SESSION_SECRET!,
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: isProduction, // Only require HTTPS in production
+      secure: true,
       maxAge: sessionTtl,
-      sameSite: isProduction ? 'strict' : 'lax',
     },
   });
 }
@@ -83,17 +68,7 @@ async function upsertUser(
 
 export async function setupAuth(app: Express) {
   app.set("trust proxy", 1);
-  
-  // Always set up session middleware (needed for both demo and production)
   app.use(getSession());
-  
-  // Skip passport setup if REPL_ID is not provided (demo mode)
-  if (!process.env.REPL_ID) {
-    console.log("REPL_ID not provided, running in demo mode - sessions enabled, skipping passport");
-    return;
-  }
-
-  // Full passport setup for production
   app.use(passport.initialize());
   app.use(passport.session());
 
@@ -109,16 +84,14 @@ export async function setupAuth(app: Express) {
     verified(null, user);
   };
 
-  const domains = process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(",") : ["localhost:5000"];
-  
-  for (const domain of domains) {
-    const protocol = domain.includes("localhost") ? "http" : "https";
+  for (const domain of process.env
+    .REPLIT_DOMAINS!.split(",")) {
     const strategy = new Strategy(
       {
         name: `replitauth:${domain}`,
         config,
         scope: "openid email profile offline_access",
-        callbackURL: `${protocol}://${domain}/api/callback`,
+        callbackURL: `https://${domain}/api/callback`,
       },
       verify,
     );
@@ -144,30 +117,20 @@ export async function setupAuth(app: Express) {
 
   app.get("/api/logout", (req, res) => {
     req.logout(() => {
-      if (process.env.REPL_ID && config) {
-        res.redirect(
-          client.buildEndSessionUrl(config, {
-            client_id: process.env.REPL_ID,
-            post_logout_redirect_uri: `${req.protocol}://${req.hostname}`,
-          }).href
-        );
-      } else {
-        res.redirect("/");
-      }
+      res.redirect(
+        client.buildEndSessionUrl(config, {
+          client_id: process.env.REPL_ID!,
+          post_logout_redirect_uri: `${req.protocol}://${req.hostname}`,
+        }).href
+      );
     });
   });
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
-  // In demo mode (no REPL_ID), skip authentication
-  if (!process.env.REPL_ID) {
-    console.log("Demo mode - skipping authentication check");
-    return next();
-  }
-
   const user = req.user as any;
 
-  if (!req.isAuthenticated() || !user?.expires_at) {
+  if (!req.isAuthenticated() || !user.expires_at) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
