@@ -18,7 +18,12 @@ export function Settings({ onNavigate }: SettingsProps) {
   const typedUser = user as UserType | undefined;
 
   const handleLogout = () => {
-    window.location.href = "/api/logout";
+    // In production deployment without auth, just refresh the page
+    if (import.meta.env.VITE_PRODUCTION_DEPLOYMENT) {
+      window.location.reload();
+    } else {
+      window.location.href = "/api/logout";
+    }
   };
 
   if (isLoading) {

@@ -23,8 +23,11 @@ function Router() {
   const [currentRoute, setCurrentRoute] = useState<Route>({ path: "home" });
   const [activeTab, setActiveTab] = useState("home");
 
-  // Show landing page for unauthenticated users
-  if (isLoading || !isAuthenticated) {
+  // For production deployment without auth, always show the app
+  const isProductionNoAuth = import.meta.env.VITE_PRODUCTION_DEPLOYMENT;
+
+  // Show landing page for unauthenticated users (only in Replit environment)
+  if (!isProductionNoAuth && (isLoading || !isAuthenticated)) {
     return <Landing />;
   }
 

@@ -8,13 +8,38 @@ import { extractTextFromImage } from "./ocr";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware
+  // Auth middleware (only in Replit environment)
   await setupAuth(app);
+  
+  // For production deployment, add logout route
+  if (!process.env.REPLIT_DOMAINS) {
+    app.get("/api/logout", (req, res) => {
+      res.redirect("/");
+    });
+    
+    app.get("/api/login", (req, res) => {
+      res.redirect("/");
+    });
+  }
 
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
+      
+      // For production deployment without Replit auth, return demo user
+      if (!process.env.REPLIT_DOMAINS) {
+        return res.json({
+          id: "demo-user",
+          email: "demo@theOpenHousePlanner.com",
+          firstName: "Demo",
+          lastName: "User",
+          profileImageUrl: null,
+          createdAt: new Date("2024-01-01"),
+          updatedAt: new Date()
+        });
+      }
+      
       const user = await storage.getUser(userId);
       res.json(user);
     } catch (error) {
