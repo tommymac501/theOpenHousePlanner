@@ -1,6 +1,7 @@
 # The Open House Planner
 
 **GitHub Repository:** https://github.com/tommymac501/theOpenHousePlanner
+**Production Domain:** theopenhouseplanner.com (Render: open-house-planner-onrender.com)
 
 ## Overview
 
