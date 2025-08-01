@@ -9,7 +9,7 @@ import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 
 if (!process.env.REPLIT_DOMAINS) {
-  throw new Error("Environment variable REPLIT_DOMAINS not provided");
+  console.warn("Environment variable REPLIT_DOMAINS not provided, using localhost for development");
 }
 
 const getOidcConfig = memoize(
@@ -84,14 +84,16 @@ export async function setupAuth(app: Express) {
     verified(null, user);
   };
 
-  for (const domain of process.env
-    .REPLIT_DOMAINS!.split(",")) {
+  const domains = process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(",") : ["localhost:5000"];
+  
+  for (const domain of domains) {
+    const protocol = domain.includes("localhost") ? "http" : "https";
     const strategy = new Strategy(
       {
         name: `replitauth:${domain}`,
         config,
         scope: "openid email profile offline_access",
-        callbackURL: `https://${domain}/api/callback`,
+        callbackURL: `${protocol}://${domain}/api/callback`,
       },
       verify,
     );

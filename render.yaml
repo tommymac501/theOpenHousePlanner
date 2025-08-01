@@ -7,3 +7,20 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: REPLIT_DOMAINS
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: REPL_ID
+        sync: false
+      - key: XAI_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+
+databases:
+  - name: open-house-planner-db
+    databaseName: openhouseplanner
+    user: openhouseplanner
