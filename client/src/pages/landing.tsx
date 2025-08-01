@@ -1,10 +1,40 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Home, MapPin, Calendar, Heart, TrendingUp, Shield } from "lucide-react";
+import { Home, MapPin, Calendar, Heart, TrendingUp, Shield, Upload, Camera, BarChart3, Navigation, Clock, Star } from "lucide-react";
 
 export default function Landing() {
+  const [activeFeature, setActiveFeature] = useState<string | null>(null);
+  
   const handleLogin = () => {
     window.location.href = "/api/login";
+  };
+
+  const featurePreviews = {
+    organization: {
+      title: "Smart Organization in Action",
+      items: [
+        { icon: Upload, text: "Upload property photos", color: "text-blue-500" },
+        { icon: Camera, text: "Parse listing details with AI", color: "text-green-500" },
+        { icon: MapPin, text: "Auto-organize by location", color: "text-purple-500" },
+      ]
+    },
+    planning: {
+      title: "Visit Planning Features",
+      items: [
+        { icon: Calendar, text: "Schedule open house visits", color: "text-orange-500" },
+        { icon: Navigation, text: "Get Waze directions", color: "text-blue-500" },
+        { icon: Clock, text: "Track visit history", color: "text-green-500" },
+      ]
+    },
+    analytics: {
+      title: "Analytics Dashboard",
+      items: [
+        { icon: BarChart3, text: "View search statistics", color: "text-indigo-500" },
+        { icon: TrendingUp, text: "Track weekly progress", color: "text-emerald-500" },
+        { icon: Star, text: "Analyze preferences", color: "text-yellow-500" },
+      ]
+    }
   };
 
   return (
@@ -50,7 +80,10 @@ export default function Landing() {
 
         {/* Features Grid */}
         <div className="grid md:grid-cols-3 gap-8 mb-16">
-          <Card className="floating-card">
+          <Card 
+            className="floating-card cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-105"
+            onClick={() => setActiveFeature(activeFeature === 'organization' ? null : 'organization')}
+          >
             <CardHeader className="text-center">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center">
                 <MapPin className="h-8 w-8 text-white" />
@@ -58,14 +91,30 @@ export default function Landing() {
               <CardTitle className="text-xl font-bold text-gray-800">Smart Organization</CardTitle>
             </CardHeader>
             <CardContent>
-              <CardDescription className="text-gray-600 leading-relaxed">
+              <CardDescription className="text-gray-600 leading-relaxed mb-4">
                 Automatically organize properties by date, location, and preferences. 
                 Upload images and parse listing details with AI assistance.
               </CardDescription>
+              {activeFeature === 'organization' && (
+                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200 animate-in slide-in-from-top-2 duration-300">
+                  <h4 className="font-semibold text-blue-800 mb-3">{featurePreviews.organization.title}</h4>
+                  <div className="space-y-2">
+                    {featurePreviews.organization.items.map((item, index) => (
+                      <div key={index} className="flex items-center space-x-3">
+                        <item.icon className={`h-4 w-4 ${item.color}`} />
+                        <span className="text-sm text-gray-700">{item.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
-          <Card className="floating-card">
+          <Card 
+            className="floating-card cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-105"
+            onClick={() => setActiveFeature(activeFeature === 'planning' ? null : 'planning')}
+          >
             <CardHeader className="text-center">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center">
                 <Calendar className="h-8 w-8 text-white" />
@@ -73,14 +122,30 @@ export default function Landing() {
               <CardTitle className="text-xl font-bold text-gray-800">Visit Planning</CardTitle>
             </CardHeader>
             <CardContent>
-              <CardDescription className="text-gray-600 leading-relaxed">
+              <CardDescription className="text-gray-600 leading-relaxed mb-4">
                 Track which properties you've visited, mark favorites, and get 
                 direct navigation to open houses through Waze integration.
               </CardDescription>
+              {activeFeature === 'planning' && (
+                <div className="bg-green-50 rounded-lg p-4 border border-green-200 animate-in slide-in-from-top-2 duration-300">
+                  <h4 className="font-semibold text-green-800 mb-3">{featurePreviews.planning.title}</h4>
+                  <div className="space-y-2">
+                    {featurePreviews.planning.items.map((item, index) => (
+                      <div key={index} className="flex items-center space-x-3">
+                        <item.icon className={`h-4 w-4 ${item.color}`} />
+                        <span className="text-sm text-gray-700">{item.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
-          <Card className="floating-card">
+          <Card 
+            className="floating-card cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-105"
+            onClick={() => setActiveFeature(activeFeature === 'analytics' ? null : 'analytics')}
+          >
             <CardHeader className="text-center">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
                 <TrendingUp className="h-8 w-8 text-white" />
@@ -88,10 +153,23 @@ export default function Landing() {
               <CardTitle className="text-xl font-bold text-gray-800">Analytics Dashboard</CardTitle>
             </CardHeader>
             <CardContent>
-              <CardDescription className="text-gray-600 leading-relaxed">
+              <CardDescription className="text-gray-600 leading-relaxed mb-4">
                 Get insights on your home search progress with statistics on 
                 visits, preferences, and upcoming open houses this week.
               </CardDescription>
+              {activeFeature === 'analytics' && (
+                <div className="bg-purple-50 rounded-lg p-4 border border-purple-200 animate-in slide-in-from-top-2 duration-300">
+                  <h4 className="font-semibold text-purple-800 mb-3">{featurePreviews.analytics.title}</h4>
+                  <div className="space-y-2">
+                    {featurePreviews.analytics.items.map((item, index) => (
+                      <div key={index} className="flex items-center space-x-3">
+                        <item.icon className={`h-4 w-4 ${item.color}`} />
+                        <span className="text-sm text-gray-700">{item.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
