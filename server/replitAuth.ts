@@ -27,6 +27,14 @@ const getOidcConfig = memoize(
 
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
+  
+  // Generate a fallback secret if SESSION_SECRET is not provided
+  const sessionSecret = process.env.SESSION_SECRET || 'fallback-secret-for-development-' + Math.random().toString(36);
+  
+  if (!process.env.SESSION_SECRET) {
+    console.warn("SESSION_SECRET not provided, using generated secret (not suitable for production)");
+  }
+  
   const pgStore = connectPg(session);
   const sessionStore = new pgStore({
     conString: process.env.DATABASE_URL,
@@ -34,15 +42,19 @@ export function getSession() {
     ttl: sessionTtl,
     tableName: "sessions",
   });
+  
+  const isProduction = process.env.NODE_ENV === 'production';
+  
   return session({
-    secret: process.env.SESSION_SECRET!,
+    secret: sessionSecret,
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: true,
+      secure: isProduction, // Only require HTTPS in production
       maxAge: sessionTtl,
+      sameSite: isProduction ? 'strict' : 'lax',
     },
   });
 }
@@ -71,6 +83,8 @@ async function upsertUser(
 
 export async function setupAuth(app: Express) {
   app.set("trust proxy", 1);
+  
+  // Always set up sessions, even without auth
   app.use(getSession());
   app.use(passport.initialize());
   app.use(passport.session());
