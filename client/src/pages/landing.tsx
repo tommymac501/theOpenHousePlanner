@@ -7,17 +7,7 @@ export default function Landing() {
   const [activeFeature, setActiveFeature] = useState<string | null>(null);
   
   const handleLogin = async () => {
-    if (import.meta.env.PROD) {
-      // In production, try Replit auth first
-      try {
-        window.location.href = "/api/login";
-        return;
-      } catch (error) {
-        console.error("Replit auth failed, trying demo mode:", error);
-      }
-    }
-    
-    // Try demo login for development or as fallback
+    // Always use demo login - simpler and more reliable
     try {
       console.log("Attempting demo login...");
       const response = await fetch("/api/auth/demo-user", {
