@@ -25,6 +25,8 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // Expose db instance for direct queries when needed
+  public db = db;
   // User operations (required for Replit Auth)
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));

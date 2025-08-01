@@ -33,62 +33,154 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware (will skip setup if no REPL_ID)
   await setupAuth(app);
 
-  // Demo user route for production
+  // Demo user route for production with enhanced error handling
   app.get('/api/auth/demo-user', async (req, res) => {
-    // Use the existing demo user ID from database
     const demoUserId = "demo-user";
     
     try {
-      // Get the existing demo user
-      const existingUser = await storage.getUser(demoUserId);
+      console.log("=== Demo User Authentication Attempt ===");
+      console.log("Database URL exists:", !!process.env.DATABASE_URL);
+      console.log("Session ID:", req.sessionID);
+      console.log("Session exists:", !!req.session);
+      
+      // Step 1: Check if users table exists
+      try {
+        const tableCheck = await storage.db.execute("SELECT 1 FROM information_schema.tables WHERE table_name = 'users'" as any);
+        const tableExists = Array.isArray(tableCheck) ? tableCheck.length > 0 : (tableCheck.rowCount || 0) > 0;
+        console.log("Users table exists:", tableExists);
+        
+        if (!tableExists) {
+          console.error("CRITICAL: Users table does not exist in database");
+          return res.status(500).json({ 
+            message: "Database schema not initialized",
+            error: "Users table missing - run database migrations",
+            debug: { tableExists: false, databaseUrl: !!process.env.DATABASE_URL }
+          });
+        }
+      } catch (tableError: any) {
+        console.error("Error checking users table:", tableError);
+        return res.status(500).json({ 
+          message: "Database connection failed",
+          error: tableError?.message || String(tableError),
+          debug: { step: "table_check", databaseUrl: !!process.env.DATABASE_URL }
+        });
+      }
+
+      // Step 2: Try to get or create demo user
+      let existingUser;
+      try {
+        existingUser = await storage.getUser(demoUserId);
+        console.log("Demo user lookup result:", !!existingUser);
+      } catch (userError: any) {
+        console.error("Error getting demo user:", userError);
+        return res.status(500).json({ 
+          message: "Failed to retrieve demo user",
+          error: userError?.message || String(userError),
+          debug: { step: "user_lookup", userId: demoUserId }
+        });
+      }
+
+      // Step 3: Create demo user if doesn't exist
       if (!existingUser) {
-        return res.status(500).json({ message: "Demo user not found" });
+        try {
+          console.log("Creating demo user...");
+          existingUser = await storage.upsertUser({
+            id: demoUserId,
+            email: "demo@openhouseplanner.com",
+            firstName: "Demo",
+            lastName: "User",
+            profileImageUrl: null,
+          });
+          console.log("Demo user created successfully:", existingUser.id);
+        } catch (createError: any) {
+          console.error("Error creating demo user:", createError);
+          return res.status(500).json({ 
+            message: "Failed to create demo user",
+            error: createError?.message || String(createError),
+            debug: { step: "user_creation", userData: { id: demoUserId, email: "demo@openhouseplanner.com" }}
+          });
+        }
+      } else {
+        console.log("Using existing demo user:", existingUser.id);
       }
       
-      console.log("Using existing demo user:", existingUser.id);
-      
-      // Set up session for demo user - using same format as passport
-      (req.session as any).passport = {
-        user: {
-          claims: {
-            sub: existingUser.id,
-            email: existingUser.email,
-            first_name: existingUser.firstName,
-            last_name: existingUser.lastName,
-          }
-        }
-      };
-      
-      // Also set user directly for compatibility
-      (req.session as any).user = {
-        claims: {
+      // Step 4: Set up session data
+      try {
+        const sessionData = {
           sub: existingUser.id,
           email: existingUser.email,
           first_name: existingUser.firstName,
           last_name: existingUser.lastName,
-        }
-      };
-      
-      console.log("Demo user session data set:", (req.session as any).user);
-      
-      // Use a promise to wait for session save completion
-      await new Promise<void>((resolve, reject) => {
-        req.session.save((err) => {
-          if (err) {
-            console.error("Session save error:", err);
-            reject(err);
-          } else {
-            console.log("Demo user session saved successfully");
-            resolve();
-          }
+        };
+
+        // Set up session for demo user - using same format as passport
+        (req.session as any).passport = {
+          user: { claims: sessionData }
+        };
+        
+        // Also set user directly for compatibility
+        (req.session as any).user = {
+          claims: sessionData
+        };
+        
+        console.log("Demo user session data set:", sessionData);
+      } catch (sessionSetupError: any) {
+        console.error("Error setting up session data:", sessionSetupError);
+        return res.status(500).json({ 
+          message: "Failed to setup session data",
+          error: sessionSetupError?.message || String(sessionSetupError),
+          debug: { step: "session_setup", userId: existingUser.id }
         });
+      }
+      
+      // Step 5: Save session to database
+      try {
+        await new Promise<void>((resolve, reject) => {
+          req.session.save((err) => {
+            if (err) {
+              console.error("Session save error:", err);
+              reject(err);
+            } else {
+              console.log("Demo user session saved successfully");
+              resolve();
+            }
+          });
+        });
+      } catch (sessionSaveError: any) {
+        console.error("Error saving session:", sessionSaveError);
+        return res.status(500).json({ 
+          message: "Failed to save session",
+          error: sessionSaveError?.message || String(sessionSaveError),
+          debug: { step: "session_save", sessionId: req.sessionID }
+        });
+      }
+      
+      // Step 6: Return success response
+      console.log("=== Demo Authentication Successful ===");
+      res.json({ 
+        message: "Demo login successful", 
+        user: existingUser, 
+        redirect: "/",
+        debug: { 
+          sessionId: req.sessionID,
+          userId: existingUser.id,
+          tableExists: true,
+          userCreated: !existingUser
+        }
       });
       
-      // Return the user data directly so the frontend can handle the redirect
-      res.json({ message: "Demo login successful", user: existingUser, redirect: "/" });
-    } catch (error) {
-      console.error("Error with demo user:", error);
-      res.status(500).json({ message: "Failed to setup demo user" });
+    } catch (error: any) {
+      console.error("=== Demo Authentication Failed ===");
+      console.error("Unexpected error:", error);
+      res.status(500).json({ 
+        message: "Unexpected error during demo authentication",
+        error: error?.message || String(error),
+        debug: { 
+          step: "unexpected_error",
+          databaseUrl: !!process.env.DATABASE_URL,
+          sessionId: req.sessionID
+        }
+      });
     }
   });
 
