@@ -10,6 +10,19 @@ export default function Landing() {
     window.location.href = "/api/login";
   };
 
+  const handleDevLogin = async () => {
+    if (import.meta.env.DEV) {
+      try {
+        const response = await fetch("/api/auth/admin-login");
+        if (response.ok) {
+          window.location.reload();
+        }
+      } catch (error) {
+        console.error("Dev login failed:", error);
+      }
+    }
+  };
+
   const featurePreviews = {
     organization: {
       title: "Smart Organization in Action",
@@ -50,12 +63,23 @@ export default function Landing() {
               Open House Planner
             </h1>
           </div>
-          <Button 
-            onClick={handleLogin}
-            className="luxury-button px-6 py-2"
-          >
-            Sign In
-          </Button>
+          <div className="flex items-center space-x-3">
+            {import.meta.env.DEV && (
+              <Button 
+                onClick={handleDevLogin}
+                variant="outline"
+                className="px-4 py-2"
+              >
+                Dev Login
+              </Button>
+            )}
+            <Button 
+              onClick={handleLogin}
+              className="luxury-button px-6 py-2"
+            >
+              Sign In
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -70,12 +94,23 @@ export default function Landing() {
             Track, organize, and plan your open house visits with smart scheduling, 
             property insights, and seamless navigation integration.
           </p>
-          <Button 
-            onClick={handleLogin}
-            className="luxury-button px-8 py-4 text-lg"
-          >
-            Get Started Free
-          </Button>
+          <div className="flex flex-col items-center space-y-3">
+            <Button 
+              onClick={handleLogin}
+              className="luxury-button px-8 py-4 text-lg"
+            >
+              Get Started Free
+            </Button>
+            {import.meta.env.DEV && (
+              <Button 
+                onClick={handleDevLogin}
+                variant="outline"
+                className="px-6 py-2 text-sm"
+              >
+                Development Login
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Features Grid */}
@@ -240,12 +275,23 @@ export default function Landing() {
             <p className="text-gray-600 mb-6 leading-relaxed">
               Join thousands of home buyers who've streamlined their house hunting with our platform.
             </p>
-            <Button 
-              onClick={handleLogin}
-              className="luxury-button px-8 py-3 text-lg w-full"
-            >
-              Start Planning Today
-            </Button>
+            <div className="space-y-3 w-full">
+              <Button 
+                onClick={handleLogin}
+                className="luxury-button px-8 py-3 text-lg w-full"
+              >
+                Start Planning Today
+              </Button>
+              {import.meta.env.DEV && (
+                <Button 
+                  onClick={handleDevLogin}
+                  variant="outline"
+                  className="px-6 py-2 text-sm w-full"
+                >
+                  Quick Dev Access
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </main>

@@ -11,6 +11,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
 
+  // Development admin bypass route
+  app.get('/api/auth/admin-login', async (req, res) => {
+    if (process.env.NODE_ENV !== 'development') {
+      return res.status(404).json({ message: "Not found" });
+    }
+    
+    // Create a mock admin user for development
+    const adminUser = {
+      id: "admin-dev-user",
+      email: "admin@openhouseplanner.dev",
+      firstName: "Admin",
+      lastName: "User",
+      profileImageUrl: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    
+    try {
+      await storage.upsertUser(adminUser);
+      
+      // Set up a mock session for development
+      (req as any).user = {
+        claims: {
+          sub: adminUser.id,
+          email: adminUser.email,
+          first_name: adminUser.firstName,
+          last_name: adminUser.lastName,
+        }
+      };
+      
+      res.json({ message: "Admin login successful", user: adminUser });
+    } catch (error) {
+      console.error("Error creating admin user:", error);
+      res.status(500).json({ message: "Failed to create admin user" });
+    }
+  });
+
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
@@ -19,6 +56,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(user);
     } catch (error) {
       console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Development route to bypass auth check
+  app.get('/api/auth/dev-user', async (req, res) => {
+    if (process.env.NODE_ENV !== 'development') {
+      return res.status(404).json({ message: "Not found" });
+    }
+    
+    try {
+      const user = await storage.getUser("admin-dev-user");
+      if (user) {
+        res.json(user);
+      } else {
+        res.status(401).json({ message: "Unauthorized" });
+      }
+    } catch (error) {
       res.status(500).json({ message: "Failed to fetch user" });
     }
   });
