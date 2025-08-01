@@ -15,23 +15,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
   });
 
-  // Setup session middleware first
+  // Setup demo mode login routes (session middleware handled by setupAuth)
   if (!process.env.REPL_ID) {
-    console.log("Setting up demo mode with memory sessions");
-    const Store = MemoryStore(session);
-    
-    app.use(session({
-      secret: process.env.SESSION_SECRET || 'demo-secret-key-change-in-production',
-      store: new Store({
-        checkPeriod: 86400000 // prune expired entries every 24h
-      }),
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        secure: false,
-        maxAge: 24 * 60 * 60 * 1000 // 24 hours
-      }
-    }));
+    console.log("Setting up demo mode login routes");
     
     // Simple demo login route that bypasses all auth
     app.get("/api/login", (req, res) => {
@@ -61,7 +47,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("Using existing demo user:", existingUser.id);
       
-      // Set up session for demo user
+      // Set up session for demo user - using same format as passport
+      (req.session as any).passport = {
+        user: {
+          claims: {
+            sub: existingUser.id,
+            email: existingUser.email,
+            first_name: existingUser.firstName,
+            last_name: existingUser.lastName,
+          }
+        }
+      };
+      
+      // Also set user directly for compatibility
       (req.session as any).user = {
         claims: {
           sub: existingUser.id,
@@ -71,15 +69,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       };
       
-      // Force session save
-      await new Promise((resolve) => {
+      console.log("Demo user session data set:", (req.session as any).user);
+      
+      // Use a promise to wait for session save completion
+      await new Promise<void>((resolve, reject) => {
         req.session.save((err) => {
-          if (err) console.error("Session save error:", err);
-          resolve(null);
+          if (err) {
+            console.error("Session save error:", err);
+            reject(err);
+          } else {
+            console.log("Demo user session saved successfully");
+            resolve();
+          }
         });
       });
-      
-      console.log("Demo user session created and saved");
       
       // Return the user data directly so the frontend can handle the redirect
       res.json({ message: "Demo login successful", user: existingUser, redirect: "/" });
@@ -128,32 +131,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Auth routes
   app.get('/api/auth/user', async (req: any, res) => {
+    console.log("=== /api/auth/user route hit ===");
+    console.log("REPL_ID:", process.env.REPL_ID);
+    console.log("Session ID:", req.sessionID);
+    console.log("Raw session:", req.session);
     try {
-      // In demo mode, skip authentication entirely
-      if (!process.env.REPL_ID) {
-        // Check session first for demo users
-        const sessionUser = (req.session as any)?.user;
-        console.log("Checking session for demo user:", { 
-          hasSession: !!req.session, 
-          hasUser: !!sessionUser, 
-          userId: sessionUser?.claims?.sub 
-        });
-        
-        if (sessionUser?.claims?.sub) {
-          const user = await storage.getUser(sessionUser.claims.sub);
-          if (user) {
-            console.log("Found demo user in session:", user.id);
-            return res.json(user);
-          }
+      // Check for demo session first (regardless of REPL_ID)
+      const sessionUser = (req.session as any)?.user;
+      const passportUser = (req.session as any)?.passport?.user;
+      
+      console.log("Session analysis:", {
+        hasSessionUser: !!sessionUser,
+        hasPassportUser: !!passportUser,
+        sessionUserClaims: sessionUser?.claims,
+        passportUserClaims: passportUser?.claims
+      });
+      
+      const userClaims = sessionUser?.claims || passportUser?.claims;
+      
+      if (userClaims?.sub) {
+        console.log("Found session with user claims:", userClaims.sub);
+        const user = await storage.getUser(userClaims.sub);
+        if (user) {
+          console.log("Found user in database from session:", user.id);
+          return res.json(user);
         }
-        
-        // No session user found in demo mode
-        console.log("No demo user found in session");
+      } else {
+        console.log("No user claims found in session");
+      }
+      
+      // If no session user found and in demo mode, return unauthorized
+      if (!process.env.REPL_ID) {
+        console.log("No session user found in demo mode");
         return res.status(401).json({ message: "Unauthorized" });
       }
       
       // Production mode - use proper authentication
+      console.log("Falling back to production authentication");
       return isAuthenticated(req, res, async () => {
+        console.log("Production auth successful, user:", req.user?.claims?.sub);
         const userId = req.user?.claims?.sub;
         if (!userId) {
           return res.status(401).json({ message: "Unauthorized" });
