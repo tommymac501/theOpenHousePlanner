@@ -2,8 +2,13 @@
 set -e
 echo "Installing all dependencies including devDependencies..."
 npm ci
-echo "Running database migrations first..."
-npx drizzle-kit push || echo "Database migration failed, continuing build..."
+echo "Running database migrations..."
+if npx drizzle-kit push; then
+  echo "Database migration completed successfully"
+else
+  echo "Database migration failed - this will cause runtime errors"
+  exit 1
+fi
 echo "Building frontend with Vite..."
 npx vite build
 echo "Building backend with esbuild..."

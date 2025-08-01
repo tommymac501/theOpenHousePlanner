@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { storage } from "./storage";
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
@@ -36,7 +37,33 @@ app.use((req, res, next) => {
   next();
 });
 
+async function ensureDemoUser() {
+  try {
+    // Try to get demo user, create if doesn't exist
+    const existingUser = await storage.getUser("demo-user");
+    if (!existingUser) {
+      console.log("Creating demo user...");
+      await storage.upsertUser({
+        id: "demo-user",
+        email: "demo@openhouseplanner.com",
+        firstName: "Demo",
+        lastName: "User",
+        profileImageUrl: null,
+      });
+      console.log("Demo user created successfully");
+    } else {
+      console.log("Demo user already exists");
+    }
+  } catch (error) {
+    console.error("Failed to ensure demo user exists:", error);
+    // Don't crash the app, just log the error
+  }
+}
+
 (async () => {
+  // Ensure demo user exists before starting server
+  await ensureDemoUser();
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
