@@ -6,6 +6,8 @@ import { z } from "zod";
 import { scrapePropertyDetails } from "./scraper";
 import { extractTextFromImage } from "./ocr";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import session from "express-session";
+import MemoryStore from "memorystore";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Health check for production deployment
@@ -16,12 +18,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup session middleware first
   if (!process.env.REPL_ID) {
     console.log("Setting up demo mode with memory sessions");
-    const session = require('express-session');
-    const MemoryStore = require('memorystore')(session);
+    const Store = MemoryStore(session);
     
     app.use(session({
       secret: process.env.SESSION_SECRET || 'demo-secret-key-change-in-production',
-      store: new MemoryStore({
+      store: new Store({
         checkPeriod: 86400000 // prune expired entries every 24h
       }),
       resave: false,
