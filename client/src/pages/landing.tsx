@@ -6,7 +6,20 @@ import { Home, MapPin, Calendar, Heart, TrendingUp, Shield, Upload, Camera, BarC
 export default function Landing() {
   const [activeFeature, setActiveFeature] = useState<string | null>(null);
   
-  const handleLogin = () => {
+  const handleLogin = async () => {
+    // Try demo login for both dev and prod
+    try {
+      const response = await fetch("/api/auth/demo-user");
+      if (response.ok) {
+        // Force a full page reload to trigger auth state change
+        window.location.href = "/";
+        return;
+      }
+    } catch (error) {
+      console.error("Demo login failed:", error);
+    }
+    
+    // If demo fails, try regular login
     window.location.href = "/api/login";
   };
 

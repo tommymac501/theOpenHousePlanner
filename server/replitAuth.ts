@@ -84,16 +84,28 @@ async function upsertUser(
 export async function setupAuth(app: Express) {
   app.set("trust proxy", 1);
   
-  // Always set up sessions, even without auth
+  // Skip auth setup if REPL_ID is not provided (demo mode)
+  if (!process.env.REPL_ID) {
+    console.warn("REPL_ID not provided, running in demo mode");
+    
+    // NO session setup for demo mode to avoid conflicts
+    // Set up simple demo routes
+    app.get("/api/login", (req, res) => {
+      console.log("Demo login redirect");
+      res.redirect('/');
+    });
+    
+    app.get("/api/logout", (req, res) => {
+      res.redirect('/');
+    });
+    
+    return;
+  }
+
+  // Full auth setup for production
   app.use(getSession());
   app.use(passport.initialize());
   app.use(passport.session());
-
-  // Skip auth setup if REPL_ID is not provided (development mode without auth)
-  if (!process.env.REPL_ID) {
-    console.warn("REPL_ID not provided, skipping Replit auth setup");
-    return;
-  }
 
   const config = await getOidcConfig();
 
