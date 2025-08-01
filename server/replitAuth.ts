@@ -84,14 +84,16 @@ async function upsertUser(
 export async function setupAuth(app: Express) {
   app.set("trust proxy", 1);
   
-  // Skip auth setup if REPL_ID is not provided (demo mode)
+  // Always set up session middleware (needed for both demo and production)
+  app.use(getSession());
+  
+  // Skip passport setup if REPL_ID is not provided (demo mode)
   if (!process.env.REPL_ID) {
-    console.log("REPL_ID not provided, running in demo mode - skipping auth setup");
+    console.log("REPL_ID not provided, running in demo mode - sessions enabled, skipping passport");
     return;
   }
 
-  // Full auth setup for production
-  app.use(getSession());
+  // Full passport setup for production
   app.use(passport.initialize());
   app.use(passport.session());
 

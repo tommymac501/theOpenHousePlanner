@@ -54,7 +54,7 @@ Preferred communication style: Simple, everyday language.
 - **Analytics**: Comprehensive analytics dashboard with insights, trends, and statistics
 
 ### Core Features
-- **User Authentication**: Replit auth integration with session management and development login bypass
+- **User Authentication**: Replit auth integration with session management, demo mode authentication, and development login bypass
 - **Property Management**: Add, edit, delete, and view open house details
 - **Image Handling**: Upload images via file input or paste from clipboard
 - **Data Parsing**: Extract property details from clipboard text or images using xAI/Grok vision
@@ -115,6 +115,14 @@ Preferred communication style: Simple, everyday language.
 - **Migrations**: Drizzle Kit handles schema migrations
 - **Schema**: Centralized in `shared/schema.ts` for type safety
 - **Connection**: Neon serverless with WebSocket support for development
+
+## Recent Changes
+
+**August 1, 2025**: Fixed critical demo authentication system
+- Resolved session middleware initialization in demo mode
+- Fixed ES module import compatibility for production builds
+- Demo authentication now works with persistent PostgreSQL sessions
+- "Try Demo" button provides full feature access with proper user sessions
 
 ### Key Architectural Decisions
 
