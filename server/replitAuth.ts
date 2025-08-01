@@ -86,7 +86,7 @@ export async function setupAuth(app: Express) {
   
   // Skip auth setup if REPL_ID is not provided (demo mode)
   if (!process.env.REPL_ID) {
-    console.warn("REPL_ID not provided, running in demo mode - skipping auth setup");
+    console.log("REPL_ID not provided, running in demo mode - skipping auth setup");
     return;
   }
 
