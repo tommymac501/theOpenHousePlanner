@@ -21,10 +21,12 @@ This application is configured for deployment on Render using the included `rend
 1. A Render account
 2. A PostgreSQL database (can be created through Render)
 3. Required environment variables:
-   - `DATABASE_URL` - PostgreSQL connection string
-   - `REPLIT_DOMAINS` - Your deployed domain(s)
-   - `REPL_ID` - Replit application ID for auth
+   - `DATABASE_URL` - PostgreSQL connection string (auto-configured from database)
    - `SESSION_SECRET` - Secret for session management (auto-generated)
+   
+4. Optional environment variables (for full functionality):
+   - `REPL_ID` - Replit application ID for auth (if not provided, uses demo mode)
+   - `REPLIT_DOMAINS` - Your deployed domain(s) (for auth callbacks)
    - `XAI_API_KEY` - xAI API key for property parsing
    - `ANTHROPIC_API_KEY` - Anthropic API key for AI features
 
@@ -45,9 +47,10 @@ The build process will:
 
 ### Environment Configuration
 
-The application uses different authentication flows for development and production:
+The application supports multiple authentication modes:
 - **Development**: Includes dev login bypass for testing
-- **Production**: Full Replit OAuth integration
+- **Production with Auth**: Full Replit OAuth integration (requires REPL_ID)
+- **Demo Mode**: Default user when REPL_ID is not provided (perfect for initial deployment)
 
 ### Tech Stack
 

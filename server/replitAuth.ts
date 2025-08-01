@@ -14,9 +14,12 @@ if (!process.env.REPLIT_DOMAINS) {
 
 const getOidcConfig = memoize(
   async () => {
+    if (!process.env.REPL_ID) {
+      throw new Error("REPL_ID environment variable is required for authentication");
+    }
     return await client.discovery(
       new URL(process.env.ISSUER_URL ?? "https://replit.com/oidc"),
-      process.env.REPL_ID!
+      process.env.REPL_ID
     );
   },
   { maxAge: 3600 * 1000 }
@@ -72,6 +75,12 @@ export async function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
+  // Skip auth setup if REPL_ID is not provided (development mode without auth)
+  if (!process.env.REPL_ID) {
+    console.warn("REPL_ID not provided, skipping Replit auth setup");
+    return;
+  }
+
   const config = await getOidcConfig();
 
   const verify: VerifyFunction = async (
@@ -119,12 +128,16 @@ export async function setupAuth(app: Express) {
 
   app.get("/api/logout", (req, res) => {
     req.logout(() => {
-      res.redirect(
-        client.buildEndSessionUrl(config, {
-          client_id: process.env.REPL_ID!,
-          post_logout_redirect_uri: `${req.protocol}://${req.hostname}`,
-        }).href
-      );
+      if (process.env.REPL_ID && config) {
+        res.redirect(
+          client.buildEndSessionUrl(config, {
+            client_id: process.env.REPL_ID,
+            post_logout_redirect_uri: `${req.protocol}://${req.hostname}`,
+          }).href
+        );
+      } else {
+        res.redirect("/");
+      }
     });
   });
 }
@@ -132,7 +145,7 @@ export async function setupAuth(app: Express) {
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   const user = req.user as any;
 
-  if (!req.isAuthenticated() || !user.expires_at) {
+  if (!req.isAuthenticated() || !user?.expires_at) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
@@ -148,6 +161,9 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
   }
 
   try {
+    if (!process.env.REPL_ID) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
     const config = await getOidcConfig();
     const tokenResponse = await client.refreshTokenGrant(config, refreshToken);
     updateUserSession(user, tokenResponse);
