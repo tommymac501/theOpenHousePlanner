@@ -19,22 +19,31 @@ export default function Landing() {
     
     // Try demo login for development or as fallback
     try {
+      console.log("Attempting demo login...");
       const response = await fetch("/api/auth/demo-user", {
         method: 'GET',
         credentials: 'include',
       });
       
       if (response.ok) {
-        console.log("Demo login successful, redirecting to app");
-        // Redirect to home page instead of reloading
-        window.location.href = "/";
+        const data = await response.json();
+        console.log("Demo login response:", data);
+        
+        // Small delay to ensure session is saved
+        setTimeout(() => {
+          console.log("Redirecting to home page...");
+          window.location.href = "/";
+        }, 500);
         return;
+      } else {
+        console.error("Demo login failed with status:", response.status);
       }
     } catch (error) {
-      console.error("Demo login failed:", error);
+      console.error("Demo login error:", error);
     }
     
     // Last resort - reload the page
+    console.log("Falling back to page reload");
     window.location.reload();
   };
 

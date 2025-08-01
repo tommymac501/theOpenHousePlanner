@@ -49,45 +49,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Demo user route for production
   app.get('/api/auth/demo-user', async (req, res) => {
-    // Use a consistent demo user ID
-    const demoUserId = "demo-user-main";
-    const demoUser = {
-      id: demoUserId,
-      email: "demo@openhouseplanner.com",
-      firstName: "Demo",
-      lastName: "User",
-      profileImageUrl: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    // Use the existing demo user ID from database
+    const demoUserId = "demo-user";
     
     try {
-      await storage.upsertUser(demoUser);
+      // Get the existing demo user
+      const existingUser = await storage.getUser(demoUserId);
+      if (!existingUser) {
+        return res.status(500).json({ message: "Demo user not found" });
+      }
+      
+      console.log("Using existing demo user:", existingUser.id);
       
       // Set up session for demo user
       (req.session as any).user = {
         claims: {
-          sub: demoUser.id,
-          email: demoUser.email,
-          first_name: demoUser.firstName,
-          last_name: demoUser.lastName,
+          sub: existingUser.id,
+          email: existingUser.email,
+          first_name: existingUser.firstName,
+          last_name: existingUser.lastName,
         }
       };
       
-      // Also set req.user for immediate use
-      (req as any).user = {
-        claims: {
-          sub: demoUser.id,
-          email: demoUser.email,
-          first_name: demoUser.firstName,
-          last_name: demoUser.lastName,
-        }
-      };
+      // Force session save
+      await new Promise((resolve) => {
+        req.session.save((err) => {
+          if (err) console.error("Session save error:", err);
+          resolve(null);
+        });
+      });
       
-      res.json({ message: "Demo login successful", user: demoUser });
+      console.log("Demo user session created and saved");
+      
+      // Return the user data directly so the frontend can handle the redirect
+      res.json({ message: "Demo login successful", user: existingUser, redirect: "/" });
     } catch (error) {
-      console.error("Error creating demo user:", error);
-      res.status(500).json({ message: "Failed to create demo user" });
+      console.error("Error with demo user:", error);
+      res.status(500).json({ message: "Failed to setup demo user" });
     }
   });
 
@@ -131,16 +129,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.get('/api/auth/user', async (req: any, res) => {
     try {
-      // Check session first for demo users
-      const sessionUser = (req.session as any)?.user;
-      if (sessionUser?.claims?.sub) {
-        const user = await storage.getUser(sessionUser.claims.sub);
-        if (user) {
-          return res.json(user);
+      // In demo mode, skip authentication entirely
+      if (!process.env.REPL_ID) {
+        // Check session first for demo users
+        const sessionUser = (req.session as any)?.user;
+        console.log("Checking session for demo user:", { 
+          hasSession: !!req.session, 
+          hasUser: !!sessionUser, 
+          userId: sessionUser?.claims?.sub 
+        });
+        
+        if (sessionUser?.claims?.sub) {
+          const user = await storage.getUser(sessionUser.claims.sub);
+          if (user) {
+            console.log("Found demo user in session:", user.id);
+            return res.json(user);
+          }
         }
+        
+        // No session user found in demo mode
+        console.log("No demo user found in session");
+        return res.status(401).json({ message: "Unauthorized" });
       }
       
-      // Fall back to authenticated route
+      // Production mode - use proper authentication
       return isAuthenticated(req, res, async () => {
         const userId = req.user?.claims?.sub;
         if (!userId) {
