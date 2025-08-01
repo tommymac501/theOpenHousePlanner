@@ -127,6 +127,14 @@ export function Settings({ onNavigate }: SettingsProps) {
                   <p className="text-gray-900 mt-1">{typedUser?.lastName || "Not set"}</p>
                 </div>
               </div>
+              
+              {import.meta.env.VITE_PRODUCTION_DEPLOYMENT && (
+                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <strong>Demo Mode:</strong> This is a demonstration version. Your data is stored locally and will persist across sessions.
+                  </p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
