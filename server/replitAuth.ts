@@ -157,6 +157,12 @@ export async function setupAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
+  // In demo mode (no REPL_ID), skip authentication
+  if (!process.env.REPL_ID) {
+    console.log("Demo mode - skipping authentication check");
+    return next();
+  }
+
   const user = req.user as any;
 
   if (!req.isAuthenticated() || !user?.expires_at) {
@@ -175,9 +181,6 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
   }
 
   try {
-    if (!process.env.REPL_ID) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
     const config = await getOidcConfig();
     const tokenResponse = await client.refreshTokenGrant(config, refreshToken);
     updateUserSession(user, tokenResponse);
