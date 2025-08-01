@@ -16,15 +16,8 @@ export function useAuth() {
     enabled: !isDev || !devUser,
   });
 
-  // For demo mode when auth fails
-  const { data: demoUser, isLoading: demoLoading } = useQuery({
-    queryKey: ["/api/auth/demo-user"],
-    retry: false,
-    enabled: !isDev && !user && !userLoading,
-  });
-
-  const finalUser = isDev && devUser ? devUser : user || demoUser;
-  const finalLoading = isDev ? devLoading : (userLoading || demoLoading);
+  const finalUser = isDev && devUser ? devUser : user;
+  const finalLoading = isDev ? devLoading : userLoading;
 
   return {
     user: finalUser,

@@ -13,9 +13,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
   });
 
-  // Check if we're in demo mode (no REPL_ID) and set up simple routes first
+  // Setup session middleware first
   if (!process.env.REPL_ID) {
-    console.log("Setting up demo mode routes");
+    console.log("Setting up demo mode with memory sessions");
+    const session = require('express-session');
+    const MemoryStore = require('memorystore')(session);
+    
+    app.use(session({
+      secret: process.env.SESSION_SECRET || 'demo-secret-key-change-in-production',
+      store: new MemoryStore({
+        checkPeriod: 86400000 // prune expired entries every 24h
+      }),
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        secure: false,
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      }
+    }));
     
     // Simple demo login route that bypasses all auth
     app.get("/api/login", (req, res) => {
@@ -33,9 +48,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Demo user route for production
   app.get('/api/auth/demo-user', async (req, res) => {
-    // Create a demo user
+    // Use a consistent demo user ID
+    const demoUserId = "demo-user-main";
     const demoUser = {
-      id: "demo-user-" + Date.now(),
+      id: demoUserId,
       email: "demo@openhouseplanner.com",
       firstName: "Demo",
       lastName: "User",
@@ -47,7 +63,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       await storage.upsertUser(demoUser);
       
-      // Set up a mock session for demo
+      // Set up session for demo user
+      (req.session as any).user = {
+        claims: {
+          sub: demoUser.id,
+          email: demoUser.email,
+          first_name: demoUser.firstName,
+          last_name: demoUser.lastName,
+        }
+      };
+      
+      // Also set req.user for immediate use
       (req as any).user = {
         claims: {
           sub: demoUser.id,
@@ -102,14 +128,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  app.get('/api/auth/user', async (req: any, res) => {
     try {
-      const userId = req.user?.claims?.sub;
-      if (!userId) {
-        return res.status(401).json({ message: "Unauthorized" });
+      // Check session first for demo users
+      const sessionUser = (req.session as any)?.user;
+      if (sessionUser?.claims?.sub) {
+        const user = await storage.getUser(sessionUser.claims.sub);
+        if (user) {
+          return res.json(user);
+        }
       }
-      const user = await storage.getUser(userId);
-      res.json(user);
+      
+      // Fall back to authenticated route
+      return isAuthenticated(req, res, async () => {
+        const userId = req.user?.claims?.sub;
+        if (!userId) {
+          return res.status(401).json({ message: "Unauthorized" });
+        }
+        const user = await storage.getUser(userId);
+        res.json(user);
+      });
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
