@@ -5,26 +5,13 @@ import { insertOpenHouseSchema, updateOpenHouseSchema } from "@shared/schema";
 import { z } from "zod";
 import { scrapePropertyDetails } from "./scraper";
 import { extractTextFromImage } from "./ocr";
-import { setupAuth } from "./auth";
-
-// Middleware to require authentication
-const requireAuth = (req: any, res: any, next: any) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ message: "Authentication required" });
-  }
-  next();
-};
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Setup authentication first
-  setupAuth(app);
-
-  // Get all open houses (user-specific)
-  app.get("/api/open-houses", requireAuth, async (req, res) => {
+  // Get all open houses
+  app.get("/api/open-houses", async (req, res) => {
     try {
       console.log("API: Fetching all open houses...");
-      const user = req.user as any;
-      const openHouses = await storage.getAllOpenHouses(user.id);
+      const openHouses = await storage.getAllOpenHouses();
       console.log("API: Successfully fetched", openHouses.length, "open houses");
       res.json(openHouses);
     } catch (error) {
@@ -33,16 +20,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Get single open house (user-specific)
-  app.get("/api/open-houses/:id", requireAuth, async (req, res) => {
+  // Get single open house
+  app.get("/api/open-houses/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid ID" });
       }
 
-      const user = req.user as any;
-      const openHouse = await storage.getOpenHouse(id, user.id);
+      const openHouse = await storage.getOpenHouse(id);
       if (!openHouse) {
         return res.status(404).json({ message: "Open house not found" });
       }
@@ -53,12 +39,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create open house (user-specific)
-  app.post("/api/open-houses", requireAuth, async (req, res) => {
+  // Create open house
+  app.post("/api/open-houses", async (req, res) => {
     try {
       const validatedData = insertOpenHouseSchema.parse(req.body);
-      const user = req.user as any;
-      const openHouse = await storage.createOpenHouse(validatedData, user.id);
+      const openHouse = await storage.createOpenHouse(validatedData);
       res.status(201).json(openHouse);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -68,8 +53,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update open house (user-specific)
-  app.patch("/api/open-houses/:id", requireAuth, async (req, res) => {
+  // Update open house
+  app.patch("/api/open-houses/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -77,8 +62,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const validatedData = updateOpenHouseSchema.parse(req.body);
-      const user = req.user as any;
-      const openHouse = await storage.updateOpenHouse(id, validatedData, user.id);
+      const openHouse = await storage.updateOpenHouse(id, validatedData);
       
       if (!openHouse) {
         return res.status(404).json({ message: "Open house not found" });
@@ -93,16 +77,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete open house (user-specific)
-  app.delete("/api/open-houses/:id", requireAuth, async (req, res) => {
+  // Delete open house
+  app.delete("/api/open-houses/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid ID" });
       }
 
-      const user = req.user as any;
-      const deleted = await storage.deleteOpenHouse(id, user.id);
+      const deleted = await storage.deleteOpenHouse(id);
       if (!deleted) {
         return res.status(404).json({ message: "Open house not found" });
       }
@@ -113,12 +96,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get stats (user-specific)
-  app.get("/api/stats", requireAuth, async (req, res) => {
+  // Get stats
+  app.get("/api/stats", async (req, res) => {
     try {
       console.log("API: Fetching stats...");
-      const user = req.user as any;
-      const stats = await storage.getStats(user.id);
+      const stats = await storage.getStats();
       console.log("API: Successfully fetched stats:", stats);
       res.json(stats);
     } catch (error) {

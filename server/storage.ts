@@ -1,84 +1,34 @@
-import { openHouses, users, type OpenHouse, type InsertOpenHouse, type UpdateOpenHouse, type User, type InsertUser } from "@shared/schema";
+import { openHouses, type OpenHouse, type InsertOpenHouse, type UpdateOpenHouse } from "@shared/schema";
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
-import session from "express-session";
-import createMemoryStore from "memorystore";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
-  // User methods
-  getUser(id: number): Promise<User | undefined>;
-  getUserByEmail(email: string): Promise<User | undefined>;
-  getAllUsers?(): Promise<User[]>;
-  createUser(user: InsertUser): Promise<User>;
-  sessionStore: any;
-  
-  // Open house methods (now user-specific)
-  getOpenHouse(id: number, userId: number): Promise<OpenHouse | undefined>;
-  getAllOpenHouses(userId: number): Promise<OpenHouse[]>;
-  createOpenHouse(openHouse: InsertOpenHouse, userId: number): Promise<OpenHouse>;
-  updateOpenHouse(id: number, updates: UpdateOpenHouse, userId: number): Promise<OpenHouse | undefined>;
-  deleteOpenHouse(id: number, userId: number): Promise<boolean>;
-  getStats(userId: number): Promise<{ total: number; thisWeek: number; nextWeek: number; visited: number; notVisited: number; liked: number; disliked: number }>;
+  getOpenHouse(id: number): Promise<OpenHouse | undefined>;
+  getAllOpenHouses(): Promise<OpenHouse[]>;
+  createOpenHouse(openHouse: InsertOpenHouse): Promise<OpenHouse>;
+  updateOpenHouse(id: number, updates: UpdateOpenHouse): Promise<OpenHouse | undefined>;
+  deleteOpenHouse(id: number): Promise<boolean>;
+  getStats(): Promise<{ total: number; thisWeek: number; nextWeek: number; visited: number; notVisited: number; liked: number; disliked: number }>;
 }
 
 export class DatabaseStorage implements IStorage {
-  sessionStore: any;
-
-  constructor() {
-    const MemoryStore = createMemoryStore(session);
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000, // Prune expired entries every 24h
-    });
-  }
-
-  // User methods
-  async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user || undefined;
-  }
-
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user || undefined;
-  }
-
-  async getAllUsers(): Promise<User[]> {
-    return await db.select().from(users);
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(insertUser)
-      .returning();
-    return user;
-  }
-
-  // Open house methods (now user-specific)
-  async getOpenHouse(id: number, userId: number): Promise<OpenHouse | undefined> {
-    const [openHouse] = await db
-      .select()
-      .from(openHouses)
-      .where(and(eq(openHouses.id, id), eq(openHouses.userId, userId)));
+  async getOpenHouse(id: number): Promise<OpenHouse | undefined> {
+    const [openHouse] = await db.select().from(openHouses).where(eq(openHouses.id, id));
     return openHouse || undefined;
   }
 
-  async getAllOpenHouses(userId: number): Promise<OpenHouse[]> {
-    const houses = await db
-      .select()
-      .from(openHouses)
-      .where(eq(openHouses.userId, userId));
+  async getAllOpenHouses(): Promise<OpenHouse[]> {
+    const houses = await db.select().from(openHouses);
     return houses.sort((a, b) => 
       new Date(a.date).getTime() - new Date(b.date).getTime()
     );
   }
 
-  async createOpenHouse(insertOpenHouse: InsertOpenHouse, userId: number): Promise<OpenHouse> {
+  async createOpenHouse(insertOpenHouse: InsertOpenHouse): Promise<OpenHouse> {
     const [openHouse] = await db
       .insert(openHouses)
       .values({
         ...insertOpenHouse,
-        userId,
         visited: insertOpenHouse.visited || false,
         favorited: insertOpenHouse.favorited || false,
       })
@@ -86,27 +36,22 @@ export class DatabaseStorage implements IStorage {
     return openHouse;
   }
 
-  async updateOpenHouse(id: number, updates: UpdateOpenHouse, userId: number): Promise<OpenHouse | undefined> {
+  async updateOpenHouse(id: number, updates: UpdateOpenHouse): Promise<OpenHouse | undefined> {
     const [updated] = await db
       .update(openHouses)
       .set(updates)
-      .where(and(eq(openHouses.id, id), eq(openHouses.userId, userId)))
+      .where(eq(openHouses.id, id))
       .returning();
     return updated || undefined;
   }
 
-  async deleteOpenHouse(id: number, userId: number): Promise<boolean> {
-    const result = await db
-      .delete(openHouses)
-      .where(and(eq(openHouses.id, id), eq(openHouses.userId, userId)));
+  async deleteOpenHouse(id: number): Promise<boolean> {
+    const result = await db.delete(openHouses).where(eq(openHouses.id, id));
     return result.rowCount !== null && result.rowCount > 0;
   }
 
-  async getStats(userId: number): Promise<{ total: number; thisWeek: number; nextWeek: number; visited: number; notVisited: number; liked: number; disliked: number }> {
-    const houses = await db
-      .select()
-      .from(openHouses)
-      .where(eq(openHouses.userId, userId));
+  async getStats(): Promise<{ total: number; thisWeek: number; nextWeek: number; visited: number; notVisited: number; liked: number; disliked: number }> {
+    const houses = await db.select().from(openHouses);
     const total = houses.length;
     const visited = houses.filter(h => h.visited).length;
     const notVisited = houses.filter(h => !h.visited).length;

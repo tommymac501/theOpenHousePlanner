@@ -1,19 +1,9 @@
 import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-import { relations } from "drizzle-orm";
-
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  email: text("email"),
-  password: text("password").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
 
 export const openHouses = pgTable("open_houses", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
   address: text("address").notNull(),
   price: text("price").notNull(),
   zestimate: text("zestimate"),
@@ -30,25 +20,8 @@ export const openHouses = pgTable("open_houses", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const usersRelations = relations(users, ({ many }) => ({
-  openHouses: many(openHouses),
-}));
-
-export const openHousesRelations = relations(openHouses, ({ one }) => ({
-  user: one(users, {
-    fields: [openHouses.userId],
-    references: [users.id],
-  }),
-}));
-
-export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
-  createdAt: true,
-});
-
 export const insertOpenHouseSchema = createInsertSchema(openHouses).omit({
   id: true,
-  userId: true,
   createdAt: true,
 }).extend({
   zestimate: z.string().nullish().transform(val => val || ""),
@@ -61,12 +34,9 @@ export const insertOpenHouseSchema = createInsertSchema(openHouses).omit({
 
 export const updateOpenHouseSchema = createInsertSchema(openHouses).omit({
   id: true,
-  userId: true,
   createdAt: true,
 }).partial();
 
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
 export type InsertOpenHouse = z.infer<typeof insertOpenHouseSchema>;
 export type UpdateOpenHouse = z.infer<typeof updateOpenHouseSchema>;
 export type OpenHouse = typeof openHouses.$inferSelect;

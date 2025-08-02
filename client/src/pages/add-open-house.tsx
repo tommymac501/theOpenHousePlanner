@@ -16,10 +16,11 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { z } from "zod";
 
 interface AddOpenHouseProps {
+  onNavigate: (path: string) => void;
   editingOpenHouse?: OpenHouse;
 }
 
-export function AddOpenHouse({ editingOpenHouse }: AddOpenHouseProps = {}) {
+export function AddOpenHouse({ onNavigate, editingOpenHouse }: AddOpenHouseProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
