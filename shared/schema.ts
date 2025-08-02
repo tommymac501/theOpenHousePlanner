@@ -18,6 +18,7 @@ export const openHouses = pgTable("open_houses", {
   favorited: boolean("favorited").default(false),
   disliked: boolean("disliked").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  userId: integer("user_id"), // Optional user association
 });
 
 export const insertOpenHouseSchema = createInsertSchema(openHouses).omit({
