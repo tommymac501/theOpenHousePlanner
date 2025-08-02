@@ -5,65 +5,8 @@ import { insertOpenHouseSchema, updateOpenHouseSchema } from "@shared/schema";
 import { z } from "zod";
 import { scrapePropertyDetails } from "./scraper";
 import { extractTextFromImage } from "./ocr";
-import { setupAuth, isAuthenticated } from "./replitAuth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Health check endpoint for production deployments
-  app.get("/api/health", (req, res) => {
-    res.json({ 
-      status: "ok", 
-      timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || "development",
-      hasReplit: !!process.env.REPLIT_DOMAINS
-    });
-  });
-
-  // Auth middleware (only in Replit environment)
-  try {
-    await setupAuth(app);
-  } catch (error) {
-    console.error("Auth setup failed:", error);
-    // Continue without auth in production
-  }
-  
-  // For production deployment, add logout route
-  if (!process.env.REPLIT_DOMAINS) {
-    app.get("/api/logout", (req, res) => {
-      res.redirect("/");
-    });
-    
-    app.get("/api/login", (req, res) => {
-      res.redirect("/");
-    });
-  }
-
-  // Auth routes
-  app.get('/api/auth/user', async (req: any, res) => {
-    try {
-      // For production deployment without Replit auth, return demo user immediately
-      if (!process.env.REPLIT_DOMAINS) {
-        return res.json({
-          id: "demo-user",
-          email: "demo@theOpenHousePlanner.com",
-          firstName: "Demo",
-          lastName: "User",
-          profileImageUrl: null,
-          createdAt: new Date("2024-01-01"),
-          updatedAt: new Date()
-        });
-      }
-      
-      // For Replit environment, use authentication middleware
-      return isAuthenticated(req, res, async () => {
-        const userId = req.user.claims.sub;
-        const user = await storage.getUser(userId);
-        res.json(user);
-      });
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
   // Get all open houses
   app.get("/api/open-houses", async (req, res) => {
     try {

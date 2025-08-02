@@ -7,10 +7,6 @@ import { BottomNavigation } from "@/components/bottom-navigation";
 import { Home } from "@/pages/home";
 import { AddOpenHouse } from "@/pages/add-open-house";
 import { OpenHouseDetail } from "@/pages/open-house-detail";
-import { Analytics } from "@/pages/analytics";
-import { Settings } from "@/pages/settings";
-import Landing from "@/pages/landing";
-import { useAuth } from "@/hooks/useAuth";
 import type { OpenHouse } from "@shared/schema";
 
 type Route = {
@@ -18,15 +14,9 @@ type Route = {
   params?: any;
 };
 
-function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
+function App() {
   const [currentRoute, setCurrentRoute] = useState<Route>({ path: "home" });
   const [activeTab, setActiveTab] = useState("home");
-
-  // Show landing page for unauthenticated users (only when not in production deployment)
-  if (!import.meta.env.VITE_PRODUCTION_DEPLOYMENT && (isLoading || !isAuthenticated)) {
-    return <Landing />;
-  }
 
   const navigate = (path: string, params?: any) => {
     setCurrentRoute({ path, params });
@@ -36,10 +26,6 @@ function Router() {
       setActiveTab("home");
     } else if (path === "add" || path === "edit") {
       setActiveTab("add");
-    } else if (path === "analytics") {
-      setActiveTab("analytics");
-    } else if (path === "settings") {
-      setActiveTab("settings");
     } else {
       // For detail view, keep the current tab active
     }
@@ -51,10 +37,9 @@ function Router() {
       navigate("home");
     } else if (tab === "add") {
       navigate("add");
-    } else if (tab === "analytics") {
-      navigate("analytics");
     } else if (tab === "settings") {
-      navigate("settings");
+      // Settings page can be implemented later
+      navigate("home");
     }
   };
 
@@ -82,37 +67,26 @@ function Router() {
           />
         );
       
-      case "analytics":
-        return <Analytics onNavigate={navigate} />;
-      
-      case "settings":
-        return <Settings onNavigate={navigate} />;
-      
       default:
         return <Home onNavigate={navigate} />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {renderCurrentView()}
-      
-      {/* Only show bottom navigation on main views */}
-      {(currentRoute.path === "home" || currentRoute.path === "add" || currentRoute.path === "analytics" || currentRoute.path === "settings") && (
-        <BottomNavigation 
-          activeTab={activeTab} 
-          onTabChange={handleTabChange} 
-        />
-      )}
-    </div>
-  );
-}
-
-function App() {
-  return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Router />
+        <div className="min-h-screen bg-gray-50">
+          {renderCurrentView()}
+          
+          {/* Only show bottom navigation on main views */}
+          {(currentRoute.path === "home" || currentRoute.path === "add") && (
+            <BottomNavigation 
+              activeTab={activeTab} 
+              onTabChange={handleTabChange} 
+            />
+          )}
+        </div>
+        
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>
