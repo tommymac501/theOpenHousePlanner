@@ -40,25 +40,24 @@ export function Home({ onNavigate }: HomeProps) {
       
       switch (activeFilter) {
         case "thisWeek":
-          // Include today and next 7 days
-          const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          // Include today and next 7 days - ensure consistent with backend
+          const startOfToday = new Date();
+          startOfToday.setHours(0, 0, 0, 0);
           const endOfWeek = new Date(startOfToday.getTime() + 7 * 24 * 60 * 60 * 1000);
-          const matches = houseDate >= startOfToday && houseDate < endOfWeek;
-          // Debug logging
-          console.log(`[DEBUG] This Week Filter:`, {
-            house: house.address.substring(0, 40),
-            date: house.date,
-            houseDate: houseDate.toISOString(),
-            startOfToday: startOfToday.toISOString(),
-            endOfWeek: endOfWeek.toISOString(),
-            matches
-          });
-          return matches;
+          // Parse house date without timezone issues
+          const houseDateParts = house.date.split('-').map(Number);
+          const houseDateLocal = new Date(houseDateParts[0], houseDateParts[1] - 1, houseDateParts[2]);
+          return houseDateLocal >= startOfToday && houseDateLocal < endOfWeek;
         case "nextWeek":
-          // Week 2: days 8-14 from today
-          const startOfNextWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7);
+          // Week 2: days 8-14 from today - ensure consistent with backend
+          const startOfNextWeek = new Date();
+          startOfNextWeek.setHours(0, 0, 0, 0);
+          startOfNextWeek.setDate(startOfNextWeek.getDate() + 7);
           const endOfNextWeek = new Date(startOfNextWeek.getTime() + 7 * 24 * 60 * 60 * 1000);
-          return houseDate >= startOfNextWeek && houseDate < endOfNextWeek;
+          // Parse house date without timezone issues
+          const nextWeekHouseDateParts = house.date.split('-').map(Number);
+          const nextWeekHouseDateLocal = new Date(nextWeekHouseDateParts[0], nextWeekHouseDateParts[1] - 1, nextWeekHouseDateParts[2]);
+          return nextWeekHouseDateLocal >= startOfNextWeek && nextWeekHouseDateLocal < endOfNextWeek;
         case "liked":
           return house.favorited;
         case "disliked":
