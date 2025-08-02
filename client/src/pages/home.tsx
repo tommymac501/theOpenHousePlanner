@@ -43,7 +43,17 @@ export function Home({ onNavigate }: HomeProps) {
           // Include today and next 7 days
           const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
           const endOfWeek = new Date(startOfToday.getTime() + 7 * 24 * 60 * 60 * 1000);
-          return houseDate >= startOfToday && houseDate < endOfWeek;
+          const matches = houseDate >= startOfToday && houseDate < endOfWeek;
+          // Debug logging
+          console.log(`[DEBUG] This Week Filter:`, {
+            house: house.address.substring(0, 40),
+            date: house.date,
+            houseDate: houseDate.toISOString(),
+            startOfToday: startOfToday.toISOString(),
+            endOfWeek: endOfWeek.toISOString(),
+            matches
+          });
+          return matches;
         case "nextWeek":
           // Week 2: days 8-14 from today
           const startOfNextWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7);
