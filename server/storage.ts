@@ -1,9 +1,8 @@
 import { openHouses, users, type OpenHouse, type InsertOpenHouse, type UpdateOpenHouse, type User, type InsertUser } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import session from "express-session";
-import connectPg from "connect-pg-simple";
-import { pool } from "./db";
+import createMemoryStore from "memorystore";
 
 export interface IStorage {
   // User methods
@@ -26,10 +25,9 @@ export class DatabaseStorage implements IStorage {
   sessionStore: any;
 
   constructor() {
-    const PostgresSessionStore = connectPg(session);
-    this.sessionStore = new PostgresSessionStore({ 
-      pool, 
-      createTableIfMissing: true 
+    const MemoryStore = createMemoryStore(session);
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000, // Prune expired entries every 24h
     });
   }
 
@@ -61,7 +59,7 @@ export class DatabaseStorage implements IStorage {
     const [openHouse] = await db
       .select()
       .from(openHouses)
-      .where(eq(openHouses.id, id).and(eq(openHouses.userId, userId)));
+      .where(and(eq(openHouses.id, id), eq(openHouses.userId, userId)));
     return openHouse || undefined;
   }
 
@@ -92,7 +90,7 @@ export class DatabaseStorage implements IStorage {
     const [updated] = await db
       .update(openHouses)
       .set(updates)
-      .where(eq(openHouses.id, id).and(eq(openHouses.userId, userId)))
+      .where(and(eq(openHouses.id, id), eq(openHouses.userId, userId)))
       .returning();
     return updated || undefined;
   }
@@ -100,7 +98,7 @@ export class DatabaseStorage implements IStorage {
   async deleteOpenHouse(id: number, userId: number): Promise<boolean> {
     const result = await db
       .delete(openHouses)
-      .where(eq(openHouses.id, id).and(eq(openHouses.userId, userId)));
+      .where(and(eq(openHouses.id, id), eq(openHouses.userId, userId)));
     return result.rowCount !== null && result.rowCount > 0;
   }
 
