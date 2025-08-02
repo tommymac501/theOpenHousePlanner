@@ -1,17 +1,19 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Home as HomeIcon, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Home as HomeIcon, ChevronDown, ChevronRight, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/header";
 import { StatsDashboard } from "@/components/stats-dashboard";
 import { OpenHouseCard } from "@/components/open-house-card";
+import { BottomNavigation } from "@/components/bottom-navigation";
+import { useAuth } from "@/hooks/use-auth";
+import { useLocation } from "wouter";
 import type { OpenHouse } from "@shared/schema";
 
-interface HomeProps {
-  onNavigate: (path: string, params?: any) => void;
-}
-
-export function Home({ onNavigate }: HomeProps) {
+export function Home() {
+  const { user, logoutMutation } = useAuth();
+  const [, setLocation] = useLocation();
+  const [activeTab, setActiveTab] = useState("home");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("date");
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
@@ -184,7 +186,7 @@ export function Home({ onNavigate }: HomeProps) {
 
   return (
     <div className="min-h-screen">
-      <Header onSearch={setSearchQuery} onSort={setSortBy} onNavigate={onNavigate} />
+      <Header onSearch={setSearchQuery} onSort={setSortBy} user={user} onLogout={() => logoutMutation.mutate()} />
       
       <main className="pb-24">
         <div className="animate-fade-in">
@@ -235,8 +237,8 @@ export function Home({ onNavigate }: HomeProps) {
                         <div key={house.id} className="animate-slide-up" style={{ animationDelay: `${index * 0.05}s` }}>
                           <OpenHouseCard
                             openHouse={house}
-                            onClick={() => onNavigate("detail", { id: house.id })}
-                            onEdit={() => onNavigate("edit", { openHouse: house })}
+                            onClick={() => handleCardClick(house)}
+                            onEdit={() => setLocation(`/edit/${house.id}`)}
                           />
                         </div>
                       ))}
@@ -265,7 +267,7 @@ export function Home({ onNavigate }: HomeProps) {
               </p>
               {!searchQuery && !activeFilter && (
                 <Button 
-                  onClick={() => onNavigate("add")}
+                  onClick={() => setLocation("/add")}
                   className="luxury-button px-8 py-3 text-lg"
                 >
                   <Plus className="h-5 w-5 mr-2" />
@@ -276,6 +278,11 @@ export function Home({ onNavigate }: HomeProps) {
           </div>
         )}
       </main>
+      
+      <BottomNavigation 
+        activeTab={activeTab} 
+        onTabChange={handleTabChange} 
+      />
     </div>
   );
 }

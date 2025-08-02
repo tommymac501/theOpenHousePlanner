@@ -8,10 +8,11 @@ import type { OpenHouse } from "@shared/schema";
 interface HeaderProps {
   onSearch?: (query: string) => void;
   onSort?: (sortBy: string) => void;
-  onNavigate?: (path: string) => void;
+  user?: any;
+  onLogout?: () => void;
 }
 
-export function Header({ onSearch, onSort, onNavigate }: HeaderProps) {
+export function Header({ onSearch, onSort, user, onLogout }: HeaderProps) {
   const [searchVisible, setSearchVisible] = useState(false);
   const [sortVisible, setSortVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
