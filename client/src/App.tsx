@@ -27,8 +27,11 @@ function AppContent() {
   useEffect(() => {
     if (!isLoading) {
       if (isAuthenticated && (currentRoute.path === "landing" || currentRoute.path === "login" || currentRoute.path === "register")) {
-        setCurrentRoute({ path: "home" });
-        setActiveTab("home");
+        // Small delay to ensure UI is ready
+        setTimeout(() => {
+          setCurrentRoute({ path: "home" });
+          setActiveTab("home");
+        }, 50);
       } else if (!isAuthenticated && currentRoute.path !== "landing" && currentRoute.path !== "login" && currentRoute.path !== "register") {
         setCurrentRoute({ path: "landing" });
       }

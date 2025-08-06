@@ -23,10 +23,13 @@ export function useLogin() {
     mutationFn: async (data: LoginData) => {
       return apiRequest("POST", "/api/auth/login", data);
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       // Invalidate and refetch auth queries to update state
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-      queryClient.refetchQueries({ queryKey: ["/api/auth/me"] });
+      // Wait a moment for session to be set, then refetch
+      setTimeout(() => {
+        queryClient.refetchQueries({ queryKey: ["/api/auth/me"] });
+      }, 100);
     },
   });
 }

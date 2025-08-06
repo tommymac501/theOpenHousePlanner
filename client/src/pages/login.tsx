@@ -32,8 +32,10 @@ export function Login({ onNavigate }: LoginProps) {
     try {
       await loginMutation.mutateAsync(data);
       toast({ title: "Welcome back!" });
-      // Let the useEffect in App.tsx handle the navigation automatically
-      // The navigation will happen when the auth state updates
+      // Force a small delay before navigation happens
+      setTimeout(() => {
+        onNavigate("home");
+      }, 200);
     } catch (error: any) {
       toast({
         title: "Login failed",
