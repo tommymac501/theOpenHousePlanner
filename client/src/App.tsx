@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
@@ -20,8 +20,20 @@ type Route = {
 
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
-  const [currentRoute, setCurrentRoute] = useState<Route>({ path: isAuthenticated ? "home" : "landing" });
+  const [currentRoute, setCurrentRoute] = useState<Route>({ path: "landing" });
   const [activeTab, setActiveTab] = useState("home");
+
+  // Handle authentication state changes
+  useEffect(() => {
+    if (!isLoading) {
+      if (isAuthenticated && (currentRoute.path === "landing" || currentRoute.path === "login" || currentRoute.path === "register")) {
+        setCurrentRoute({ path: "home" });
+        setActiveTab("home");
+      } else if (!isAuthenticated && !["landing", "login", "register"].includes(currentRoute.path)) {
+        setCurrentRoute({ path: "landing" });
+      }
+    }
+  }, [isAuthenticated, isLoading, currentRoute.path]);
 
   const navigate = (path: string, params?: any) => {
     setCurrentRoute({ path, params });
