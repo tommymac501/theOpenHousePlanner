@@ -25,11 +25,14 @@ function AppContent() {
 
   // Handle authentication state changes
   useEffect(() => {
+    console.log("Auth state changed:", { isAuthenticated, isLoading, currentPath: currentRoute.path });
     if (!isLoading) {
       if (isAuthenticated && (currentRoute.path === "landing" || currentRoute.path === "login" || currentRoute.path === "register")) {
+        console.log("Redirecting to home after successful authentication");
         setCurrentRoute({ path: "home" });
         setActiveTab("home");
       } else if (!isAuthenticated && !["landing", "login", "register"].includes(currentRoute.path)) {
+        console.log("Redirecting to landing after logout");
         setCurrentRoute({ path: "landing" });
       }
     }
