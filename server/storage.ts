@@ -47,7 +47,7 @@ export class DatabaseStorage implements IStorage {
     return updated || undefined;
   }
 
-  async deleteOpenHouse(id: number, userId: string): Promise<boolean> {
+  async deleteOpenHouse(id: number, userId: number): Promise<boolean> {
     const result = await db.delete(openHouses)
       .where(and(eq(openHouses.id, id), eq(openHouses.userId, userId)));
     return result.rowCount !== null && result.rowCount > 0;
