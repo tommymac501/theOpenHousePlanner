@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Calendar, Clock, ArrowLeft, Clipboard, Link, Trash2 } from "lucide-react";
+import { Calendar, Clock, ArrowLeft, Clipboard, Link } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -125,27 +125,7 @@ export function AddOpenHouse({ onNavigate, editingOpenHouse }: AddOpenHouseProps
     },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: async () => {
-      await apiRequest("DELETE", `/api/open-houses/${editingOpenHouse!.id}`);
-    },
-    onSuccess: () => {
-      // Force refetch of all related queries
-      queryClient.invalidateQueries({ queryKey: ["/api/open-houses"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
-      queryClient.refetchQueries({ queryKey: ["/api/open-houses"] });
-      queryClient.refetchQueries({ queryKey: ["/api/stats"] });
-      toast({ title: "Open house deleted successfully!" });
-      onNavigate("home");
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to delete open house",
-        variant: "destructive",
-      });
-    },
-  });
+
 
   const parseClipboardMutation = useMutation({
     mutationFn: async (text: string) => {
@@ -226,11 +206,7 @@ export function AddOpenHouse({ onNavigate, editingOpenHouse }: AddOpenHouseProps
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
-  const handleDelete = () => {
-    if (window.confirm("Are you sure you want to delete this property? This action cannot be undone.")) {
-      deleteMutation.mutate();
-    }
-  };
+
 
   return (
     <div className="min-h-screen">
@@ -698,27 +674,14 @@ Beautiful 3BR/2BA home with garden'"
                   )}
                 />
 
-                <div className="pt-6 space-y-4">
+                <div className="pt-6">
                   <Button
                     type="submit"
                     className="luxury-button w-full py-4 text-lg font-semibold"
-                    disabled={isLoading || deleteMutation.isPending}
+                    disabled={isLoading}
                   >
                     {isLoading ? "Saving..." : (editingOpenHouse ? "Update Property" : "Save Property")}
                   </Button>
-                  
-                  {editingOpenHouse && (
-                    <Button
-                      type="button"
-                      onClick={handleDelete}
-                      disabled={deleteMutation.isPending || isLoading}
-                      variant="destructive"
-                      className="w-full py-4 text-lg font-semibold bg-red-500 hover:bg-red-600 text-white"
-                    >
-                      <Trash2 className="h-5 w-5 mr-2" />
-                      {deleteMutation.isPending ? "Deleting..." : "Delete Property"}
-                    </Button>
-                  )}
                 </div>
               </form>
             </Form>
