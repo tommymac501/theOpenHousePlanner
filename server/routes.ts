@@ -1,17 +1,128 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertOpenHouseSchema, updateOpenHouseSchema } from "@shared/schema";
+import { insertOpenHouseSchema, updateOpenHouseSchema, registerSchema, loginSchema } from "@shared/schema";
 import { z } from "zod";
 import { scrapePropertyDetails } from "./scraper";
 import { extractTextFromImage } from "./ocr";
+import { requireAuth, attachUser, hashPassword, comparePassword, getCurrentUser } from "./auth";
+import { db } from "./db";
+import { users } from "@shared/schema";
+import { eq } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Get all open houses
-  app.get("/api/open-houses", async (req, res) => {
+  // Attach user to all requests
+  app.use(attachUser);
+
+  // Authentication routes
+  app.post("/api/auth/register", async (req, res) => {
     try {
-      console.log("API: Fetching all open houses...");
-      const openHouses = await storage.getAllOpenHouses();
+      const { name, email, password } = registerSchema.parse(req.body);
+      
+      // Check if user already exists
+      const [existingUser] = await db.select().from(users).where(eq(users.email, email));
+      if (existingUser) {
+        return res.status(400).json({ message: "User with this email already exists" });
+      }
+
+      // Hash password and create user
+      const hashedPassword = await hashPassword(password);
+      const [newUser] = await db.insert(users).values({
+        name,
+        email,
+        password: hashedPassword,
+      }).returning({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        createdAt: users.createdAt,
+      });
+
+      // Set session
+      req.session.userId = newUser.id;
+      req.session.user = newUser;
+
+      res.status(201).json({ user: newUser });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      console.error("Registration error:", error);
+      res.status(500).json({ message: "Failed to register user" });
+    }
+  });
+
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { email, password } = loginSchema.parse(req.body);
+      
+      // Find user
+      const [user] = await db.select().from(users).where(eq(users.email, email));
+      if (!user) {
+        return res.status(400).json({ message: "Invalid email or password" });
+      }
+
+      // Check password
+      const isValidPassword = await comparePassword(password, user.password);
+      if (!isValidPassword) {
+        return res.status(400).json({ message: "Invalid email or password" });
+      }
+
+      // Set session
+      req.session.userId = user.id;
+      req.session.user = {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        createdAt: user.createdAt,
+      };
+
+      res.json({
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          createdAt: user.createdAt,
+        }
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Failed to login" });
+    }
+  });
+
+  app.post("/api/auth/logout", (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ message: "Failed to logout" });
+      }
+      res.json({ message: "Logged out successfully" });
+    });
+  });
+
+  app.get("/api/auth/me", async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    const user = await getCurrentUser(req);
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
+    
+    res.json({ user });
+  });
+
+  // Protected routes - add requireAuth middleware to routes that need authentication
+  // Get all open houses
+  app.get("/api/open-houses", requireAuth, async (req, res) => {
+    try {
+      const userId = parseInt(req.session.userId);
+      console.log("API: Fetching all open houses for user:", userId);
+      const openHouses = await storage.getAllOpenHouses(userId);
       console.log("API: Successfully fetched", openHouses.length, "open houses");
       res.json(openHouses);
     } catch (error) {
@@ -21,14 +132,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get single open house
-  app.get("/api/open-houses/:id", async (req, res) => {
+  app.get("/api/open-houses/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      const userId = parseInt(req.session.userId);
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid ID" });
       }
 
-      const openHouse = await storage.getOpenHouse(id);
+      const openHouse = await storage.getOpenHouse(id, userId);
       if (!openHouse) {
         return res.status(404).json({ message: "Open house not found" });
       }
@@ -40,9 +152,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create open house
-  app.post("/api/open-houses", async (req, res) => {
+  app.post("/api/open-houses", requireAuth, async (req, res) => {
     try {
-      const validatedData = insertOpenHouseSchema.parse(req.body);
+      const userId = parseInt(req.session.userId);
+      const validatedData = insertOpenHouseSchema.parse({
+        ...req.body,
+        userId: userId
+      });
       const openHouse = await storage.createOpenHouse(validatedData);
       res.status(201).json(openHouse);
     } catch (error) {
@@ -54,15 +170,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update open house
-  app.patch("/api/open-houses/:id", async (req, res) => {
+  app.patch("/api/open-houses/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      const userId = parseInt(req.session.userId);
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid ID" });
       }
 
       const validatedData = updateOpenHouseSchema.parse(req.body);
-      const openHouse = await storage.updateOpenHouse(id, validatedData);
+      const openHouse = await storage.updateOpenHouse(id, userId, validatedData);
       
       if (!openHouse) {
         return res.status(404).json({ message: "Open house not found" });
@@ -78,14 +195,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete open house
-  app.delete("/api/open-houses/:id", async (req, res) => {
+  app.delete("/api/open-houses/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid ID" });
       }
 
-      const deleted = await storage.deleteOpenHouse(id);
+      const userId = parseInt(req.session.userId);
+      const deleted = await storage.deleteOpenHouse(id, userId);
       if (!deleted) {
         return res.status(404).json({ message: "Open house not found" });
       }
@@ -97,10 +215,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get stats
-  app.get("/api/stats", async (req, res) => {
+  app.get("/api/stats", requireAuth, async (req, res) => {
     try {
-      console.log("API: Fetching stats...");
-      const stats = await storage.getStats();
+      const userId = parseInt(req.session.userId);
+      console.log("API: Fetching stats for user:", userId);
+      const stats = await storage.getStats(userId);
       console.log("API: Successfully fetched stats:", stats);
       res.json(stats);
     } catch (error) {
@@ -110,7 +229,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Parse listing data
-  app.post("/api/parse-listing", async (req, res) => {
+  app.post("/api/parse-listing", requireAuth, async (req, res) => {
     try {
       const { text } = req.body;
       if (!text || typeof text !== 'string') {
@@ -155,7 +274,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // OCR endpoint for image text extraction
-  app.post("/api/ocr-parse", async (req, res) => {
+  app.post("/api/ocr-parse", requireAuth, async (req, res) => {
     try {
       const { imageData } = req.body;
       if (!imageData || typeof imageData !== 'string') {

@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Home as HomeIcon, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Home as HomeIcon, ChevronDown, ChevronRight, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/header";
 import { StatsDashboard } from "@/components/stats-dashboard";
 import { OpenHouseCard } from "@/components/open-house-card";
+import { useAuth, useLogout } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import type { OpenHouse } from "@shared/schema";
 
 interface HomeProps {
@@ -12,6 +14,9 @@ interface HomeProps {
 }
 
 export function Home({ onNavigate }: HomeProps) {
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const logoutMutation = useLogout();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("date");
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());

@@ -1,8 +1,16 @@
 import { useState } from "react";
-import { Search, SortAsc, Home, Printer, Plus } from "lucide-react";
+import { Search, SortAsc, Home, Printer, Plus, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import { useAuth, useLogout } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import type { OpenHouse } from "@shared/schema";
 
 interface HeaderProps {
@@ -12,6 +20,9 @@ interface HeaderProps {
 }
 
 export function Header({ onSearch, onSort, onNavigate }: HeaderProps) {
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const logoutMutation = useLogout();
   const [searchVisible, setSearchVisible] = useState(false);
   const [sortVisible, setSortVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -249,6 +260,20 @@ export function Header({ onSearch, onSort, onNavigate }: HeaderProps) {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await logoutMutation.mutateAsync();
+      toast({ title: "Logged out successfully" });
+      onNavigate?.("landing");
+    } catch (error) {
+      toast({
+        title: "Logout failed",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="modern-header sticky top-0 z-50">
       <div className="flex items-center justify-between px-4 sm:px-6 py-3">
@@ -299,6 +324,29 @@ export function Header({ onSearch, onSort, onNavigate }: HeaderProps) {
           >
             <SortAsc className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="p-2 sm:p-3 rounded-xl hover:bg-gradient-to-r hover:from-purple-500 hover:to-indigo-600 hover:text-white transition-all duration-300 text-gray-700 hover:shadow-lg"
+              >
+                <User className="h-4 w-4 sm:h-5 sm:w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem disabled className="text-sm text-gray-600">
+                {user?.name || user?.email}
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={handleLogout}
+                className="text-red-600 focus:text-red-600"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
