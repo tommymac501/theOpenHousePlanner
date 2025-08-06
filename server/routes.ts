@@ -120,7 +120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all open houses
   app.get("/api/open-houses", requireAuth, async (req, res) => {
     try {
-      const userId = parseInt(req.session.userId);
+      const userId = req.session.userId!;
       console.log("API: Fetching all open houses for user:", userId);
       const openHouses = await storage.getAllOpenHouses(userId);
       console.log("API: Successfully fetched", openHouses.length, "open houses");
@@ -135,7 +135,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/open-houses/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const userId = parseInt(req.session.userId);
+      const userId = req.session.userId!;
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid ID" });
       }
@@ -154,7 +154,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create open house
   app.post("/api/open-houses", requireAuth, async (req, res) => {
     try {
-      const userId = parseInt(req.session.userId);
+      const userId = req.session.userId!;
       const validatedData = insertOpenHouseSchema.parse({
         ...req.body,
         userId: userId
@@ -173,7 +173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/open-houses/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const userId = parseInt(req.session.userId);
+      const userId = req.session.userId!;
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid ID" });
       }
@@ -202,7 +202,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid ID" });
       }
 
-      const userId = parseInt(req.session.userId);
+      const userId = req.session.userId!;
       const deleted = await storage.deleteOpenHouse(id, userId);
       if (!deleted) {
         return res.status(404).json({ message: "Open house not found" });
@@ -217,7 +217,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get stats
   app.get("/api/stats", requireAuth, async (req, res) => {
     try {
-      const userId = parseInt(req.session.userId);
+      const userId = req.session.userId!;
       console.log("API: Fetching stats for user:", userId);
       const stats = await storage.getStats(userId);
       console.log("API: Successfully fetched stats:", stats);

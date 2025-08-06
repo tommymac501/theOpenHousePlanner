@@ -8,13 +8,6 @@ export function useAuth() {
     retry: false,
   });
 
-  console.log("useAuth state:", { 
-    user: user?.user, 
-    isLoading, 
-    isAuthenticated: !!user?.user,
-    error: error?.message 
-  });
-
   return {
     user: user?.user,
     isLoading,
@@ -30,10 +23,9 @@ export function useLogin() {
     mutationFn: async (data: LoginData) => {
       return apiRequest("POST", "/api/auth/login", data);
     },
-    onSuccess: (data) => {
-      console.log("Login successful, invalidating auth queries:", data);
+    onSuccess: () => {
+      // Invalidate and refetch auth queries to update state
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-      // Also refetch immediately
       queryClient.refetchQueries({ queryKey: ["/api/auth/me"] });
     },
   });
