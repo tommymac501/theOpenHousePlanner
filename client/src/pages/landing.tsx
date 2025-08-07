@@ -19,7 +19,8 @@ export function Landing({ onNavigate }: LandingProps) {
               <img 
                 src={logoImage} 
                 alt="The Open House Planner" 
-                className="h-20 w-auto"
+                className="h-26 w-auto"
+                style={{ imageRendering: 'crisp-edges' }}
               />
             </div>
             <div className="space-x-4">

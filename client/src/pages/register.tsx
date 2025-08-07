@@ -65,7 +65,8 @@ export function Register({ onNavigate }: RegisterProps) {
             <img 
               src={logoImage} 
               alt="The Open House Planner" 
-              className="h-32 w-auto"
+              className="h-42 w-auto"
+              style={{ imageRendering: 'crisp-edges' }}
             />
           </div>
         </div>
