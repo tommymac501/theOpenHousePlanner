@@ -26,6 +26,7 @@ export function Header({ onSearch, onSort, onNavigate }: HeaderProps) {
   const [searchVisible, setSearchVisible] = useState(false);
   const [sortVisible, setSortVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeSort, setActiveSort] = useState("date");
 
   const { data: openHouses = [] } = useQuery<OpenHouse[]>({
     queryKey: ["/api/open-houses"],
@@ -42,6 +43,11 @@ export function Header({ onSearch, onSort, onNavigate }: HeaderProps) {
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
     onSearch?.(value);
+  };
+
+  const handleSortChange = (sortBy: string) => {
+    setActiveSort(sortBy);
+    onSort?.(sortBy);
   };
 
   const sortOptions = [
@@ -371,9 +377,9 @@ export function Header({ onSearch, onSort, onNavigate }: HeaderProps) {
             {sortOptions.map((option) => (
               <Button
                 key={option.id}
-                variant={option.id === "date" ? "default" : "secondary"}
+                variant={option.id === activeSort ? "default" : "secondary"}
                 size="sm"
-                onClick={() => onSort?.(option.id)}
+                onClick={() => handleSortChange(option.id)}
                 className="px-3 py-2 rounded-full text-sm font-medium"
               >
                 {option.label}
