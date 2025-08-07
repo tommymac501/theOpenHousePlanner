@@ -59,11 +59,12 @@ export function Login({ onNavigate }: LoginProps) {
             Back
           </Button>
           
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <div className="h-10 w-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-              <MapPin className="h-6 w-6 text-white" />
-            </div>
-            <span className="text-2xl font-bold text-gray-900">Open House Planner</span>
+          <div className="flex items-center justify-center mb-4">
+            <img 
+              src="@assets/TOHP_1754579048093.png" 
+              alt="The Open House Planner" 
+              className="h-16 w-auto"
+            />
           </div>
         </div>
 
