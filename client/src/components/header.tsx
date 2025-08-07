@@ -199,7 +199,7 @@ export function Header({ onSearch, onSort, onNavigate }: HeaderProps) {
         </head>
         <body>
           <div class="header">
-            <h1>The Open House Planner - Schedule</h1>
+            <h1>Open House Schedule</h1>
             <p>Generated on ${new Date().toLocaleDateString('en-US', { 
               year: 'numeric', 
               month: 'long', 

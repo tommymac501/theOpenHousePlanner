@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { ArrowLeft, MapPin, Eye, EyeOff } from "lucide-react";
+import logoImage from "@assets/TOHP_1754579048093.png";
 import { useRegister } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { registerSchema } from "@shared/schema";
@@ -34,7 +35,7 @@ export function Register({ onNavigate }: RegisterProps) {
       await registerMutation.mutateAsync(data);
       toast({ 
         title: "Account created successfully!",
-        description: "Welcome to The Open House Planner"
+        description: "Welcome! Your account is ready."
       });
       onNavigate("home");
     } catch (error: any) {
@@ -62,7 +63,7 @@ export function Register({ onNavigate }: RegisterProps) {
           
           <div className="flex items-center justify-center mb-4">
             <img 
-              src="@assets/TOHP_1754579048093.png" 
+              src={logoImage} 
               alt="The Open House Planner" 
               className="h-16 w-auto"
             />

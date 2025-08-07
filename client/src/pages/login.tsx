@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { ArrowLeft, MapPin, Eye, EyeOff } from "lucide-react";
+import logoImage from "@assets/TOHP_1754579048093.png";
 import { useLogin } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { loginSchema } from "@shared/schema";
@@ -61,7 +62,7 @@ export function Login({ onNavigate }: LoginProps) {
           
           <div className="flex items-center justify-center mb-4">
             <img 
-              src="@assets/TOHP_1754579048093.png" 
+              src={logoImage} 
               alt="The Open House Planner" 
               className="h-16 w-auto"
             />

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin, Calendar, Heart, Star, TrendingUp, Users } from "lucide-react";
+import logoImage from "@assets/TOHP_1754579048093.png";
 
 interface LandingProps {
   onNavigate: (path: string) => void;
@@ -16,7 +17,7 @@ export function Landing({ onNavigate }: LandingProps) {
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-3">
               <img 
-                src="@assets/TOHP_1754579048093.png" 
+                src={logoImage} 
                 alt="The Open House Planner" 
                 className="h-10 w-auto"
               />
@@ -52,7 +53,7 @@ export function Landing({ onNavigate }: LandingProps) {
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
             Discover, organize, and track real estate open houses with our intelligent planning platform. 
-            Turn property hunting into a streamlined, data-driven experience with TheOpenHousePlanner.com.
+            Turn property hunting into a streamlined, data-driven experience.
           </p>
           <div className="space-x-4">
             <Button 
